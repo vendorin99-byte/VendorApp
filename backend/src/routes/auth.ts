@@ -10,23 +10,41 @@ function signToken(payload: object) {
   return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '30d' })
 }
 
-// ── Customer register (OTP-based, no password) ──────────────────────────────
+function generateReferralCode(length = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
+
+// ── Customer register ────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   const schema = z.object({
     email: z.string().email(),
     name: z.string().min(2),
     phone: z.string().optional(),
     password: z.string().min(8),
+    ref: z.string().optional(),
   })
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
 
-  const { email, name, phone, password } = parsed.data
+  const { email, name, phone, password, ref } = parsed.data
+
+  const existing = await supabase.from('users').select('id').eq('email', email).single()
+  if (existing.data) return res.status(400).json({ error: 'Email sudah terdaftar' })
+
+  let referred_by: string | null = null
+  if (ref) {
+    const { data: referrer } = await supabase.from('users').select('id').eq('referral_code', ref).single()
+    if (referrer) referred_by = referrer.id
+  }
+
   const password_hash = await bcrypt.hash(password, 10)
+  const referral_code = generateReferralCode()
 
   const { error } = await supabase.from('users').insert({
     email, name, phone, role: 'customer',
     password_hash, is_verified: true,
+    referral_code, referred_by,
   })
 
   if (error) return res.status(400).json({ error: error.message })

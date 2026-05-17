@@ -35,6 +35,24 @@ router.post('/payment', async (req, res) => {
     }).eq('id', booking.vendor_id)
 
     await creditWallet(booking.vendor_id, booking.vendor_received, 'credit_order', booking.id, `Pesanan #${booking.id.slice(0, 8)} selesai`)
+
+    // Credit affiliate commission (2% of total) to referrer
+    const { data: customer } = await supabase
+      .from('users').select('referred_by').eq('id', booking.user_id).single()
+
+    if (customer?.referred_by) {
+      const commission = Math.floor(booking.total_amount * 0.02)
+      const { data: referrer } = await supabase.from('users').select('affiliate_balance').eq('id', customer.referred_by).single()
+      const newBalance = (referrer?.affiliate_balance || 0) + commission
+      await supabase.from('users').update({ affiliate_balance: newBalance }).eq('id', customer.referred_by)
+      await supabase.from('affiliate_transactions').insert({
+        user_id: customer.referred_by,
+        booking_id: booking.id,
+        amount: commission,
+        type: 'commission',
+        description: `Komisi 2% dari pesanan #${booking.id.slice(0, 8)}`,
+      })
+    }
   }
 
   res.json({ received: true })

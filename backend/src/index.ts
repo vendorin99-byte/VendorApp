@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import authRoutes from './routes/auth'
 import vendorRoutes from './routes/customer/vendors'
 import bookingRoutes from './routes/customer/bookings'
+import customerProfileRoutes from './routes/customer/profile'
 import orderRoutes from './routes/vendor/orders'
 import serviceRoutes from './routes/vendor/services'
 import portfolioRoutes from './routes/vendor/portfolio'
@@ -39,6 +40,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 app.use('/api/auth', authRoutes)
 app.use('/api/vendors', vendorRoutes)
 app.use('/api/bookings', bookingRoutes)
+app.use('/api/customer/profile', customerProfileRoutes)
 app.use('/api/vendor/orders', orderRoutes)
 app.use('/api/vendor/services', serviceRoutes)
 app.use('/api/vendor/portfolio', portfolioRoutes)
