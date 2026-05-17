@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useAuthStore } from '../store/authStore'
 import TabNavigator from './TabNavigator'
+import VendorTabNavigator from './VendorTabNavigator'
 import SplashScreen from '../screens/auth/SplashScreen'
 import OnboardingScreen from '../screens/auth/OnboardingScreen'
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -41,7 +42,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 export default function RootNavigator() {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
+  const isVendor = user?.role === 'vendor'
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -57,7 +59,7 @@ export default function RootNavigator() {
         </>
       ) : (
         <>
-          <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen name="Main" component={isVendor ? VendorTabNavigator : TabNavigator} />
           <Stack.Screen name="VendorDetail" component={VendorDetailScreen} options={{ headerShown: true, title: '' }} />
           <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: true, title: 'Buat Pesanan' }} />
           <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: true, title: 'Pembayaran' }} />
