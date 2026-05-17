@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
 import { useAuthStore } from '../../store/authStore'
+import PasswordInput from '../../components/PasswordInput'
 import api from '../../services/api'
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>
@@ -45,12 +46,10 @@ export default function LoginScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="🔒  Kata Sandi"
+        <PasswordInput
           value={form.password}
           onChangeText={(v) => setForm({ ...form, password: v })}
-          secureTextEntry
+          placeholder="🔒  Kata Sandi"
         />
         {!!error && <Text style={styles.error}>{error}</Text>}
 

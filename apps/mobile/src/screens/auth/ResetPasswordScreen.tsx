@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native'
+import PasswordInput from '../../components/PasswordInput'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -50,19 +51,15 @@ export default function ResetPasswordScreen() {
           keyboardType="number-pad"
           maxLength={6}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="🔒  Password Baru (min. 8 karakter)"
+        <PasswordInput
           value={form.password}
           onChangeText={(v) => setForm({ ...form, password: v })}
-          secureTextEntry
+          placeholder="Password Baru (min. 8 karakter)"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="🔒  Konfirmasi Password"
+        <PasswordInput
           value={form.confirm}
           onChangeText={(v) => setForm({ ...form, confirm: v })}
-          secureTextEntry
+          placeholder="Konfirmasi Password"
         />
         {!!error && <Text style={styles.error}>{error}</Text>}
         <TouchableOpacity style={styles.btn} onPress={handleReset} disabled={loading}>

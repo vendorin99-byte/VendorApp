@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar } from 'react-native'
+import PasswordInput from '../../components/PasswordInput'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import api from '../../services/api'
@@ -40,13 +41,13 @@ export default function ChangePasswordScreen() {
 
       <View style={styles.form}>
         <Text style={styles.label}>Password Lama</Text>
-        <TextInput style={styles.input} value={oldPwd} onChangeText={setOldPwd} secureTextEntry placeholder="Masukkan password lama" />
+        <PasswordInput value={oldPwd} onChangeText={setOldPwd} placeholder="Masukkan password lama" />
 
         <Text style={styles.label}>Password Baru</Text>
-        <TextInput style={styles.input} value={newPwd} onChangeText={setNewPwd} secureTextEntry placeholder="Minimal 8 karakter" />
+        <PasswordInput value={newPwd} onChangeText={setNewPwd} placeholder="Minimal 8 karakter" />
 
         <Text style={styles.label}>Konfirmasi Password Baru</Text>
-        <TextInput style={styles.input} value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry placeholder="Ulangi password baru" />
+        <PasswordInput value={confirmPwd} onChangeText={setConfirmPwd} placeholder="Ulangi password baru" />
 
         <TouchableOpacity style={styles.btn} onPress={handleChange} disabled={loading}>
           <Text style={styles.btnText}>{loading ? 'Menyimpan...' : 'Ganti Password'}</Text>
@@ -65,6 +66,7 @@ const styles = StyleSheet.create({
   form: { padding: 16, gap: 4 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginTop: 14 },
   input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 14, fontSize: 15, marginTop: 4 },
+  // PasswordInput sudah handle border sendiri, style diatas tidak dipakai lagi
   btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 28 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 })

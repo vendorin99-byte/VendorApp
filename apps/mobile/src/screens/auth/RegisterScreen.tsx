@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import PasswordInput from '../../components/PasswordInput'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -27,11 +28,10 @@ export default function RegisterScreen() {
     }
   }
 
-  const fields: { label: string; key: keyof typeof form; placeholder: string; type?: 'email-address' | 'phone-pad'; secure?: boolean }[] = [
-    { label: 'Nama Lengkap', key: 'name', placeholder: 'Masukkan nama lengkap Anda' },
-    { label: 'Alamat Email', key: 'email', placeholder: 'contoh@email.com', type: 'email-address' },
-    { label: 'No. Telepon', key: 'phone', placeholder: '08xxxxxxxxxx', type: 'phone-pad' },
-    { label: 'Kata Sandi', key: 'password', placeholder: 'Masukkan kata sandi Anda', secure: true },
+  const nonPasswordFields: { key: keyof typeof form; placeholder: string; type?: 'email-address' | 'phone-pad' }[] = [
+    { key: 'name', placeholder: 'Nama Lengkap' },
+    { key: 'email', placeholder: 'contoh@email.com', type: 'email-address' },
+    { key: 'phone', placeholder: '08xxxxxxxxxx', type: 'phone-pad' },
   ]
 
   return (
@@ -42,7 +42,7 @@ export default function RegisterScreen() {
         <Text style={styles.subtitle}>Silahkan isi data berikut{'\n'}untuk melanjutkan</Text>
 
         <View style={styles.form}>
-          {fields.map((f) => (
+          {nonPasswordFields.map((f) => (
             <View key={f.key}>
               <TextInput
                 style={styles.input}
@@ -50,11 +50,15 @@ export default function RegisterScreen() {
                 value={form[f.key]}
                 onChangeText={(v) => setForm({ ...form, [f.key]: v })}
                 keyboardType={f.type}
-                secureTextEntry={f.secure}
                 autoCapitalize={f.type === 'email-address' ? 'none' : 'words'}
               />
             </View>
           ))}
+          <PasswordInput
+            value={form.password}
+            onChangeText={(v) => setForm({ ...form, password: v })}
+            placeholder="Kata Sandi (min. 8 karakter)"
+          />
           <TextInput
             style={[styles.input, { borderStyle: 'dashed' }]}
             placeholder="Kode Referral (opsional)"
