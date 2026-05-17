@@ -51,6 +51,22 @@ router.patch('/:id/reject', async (req, res) => {
   res.json({ message: 'Order rejected' })
 })
 
+router.patch('/:id/confirm-cash', async (req, res) => {
+  const { data: booking } = await supabase
+    .from('bookings').select('*, services(name)').eq('id', req.params.id).eq('vendor_id', req.user!.vendorId).single()
+  if (!booking) return res.status(404).json({ error: 'Not found' })
+  if (booking.payment_method !== 'cash') return res.status(400).json({ error: 'Bukan pesanan cash' })
+
+  await supabase.from('bookings').update({ status: 'fully_paid' }).eq('id', booking.id)
+  await supabase.from('transactions').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('booking_id', booking.id)
+
+  const { creditWallet } = await import('../../services/wallet')
+  await creditWallet(booking.vendor_id, booking.vendor_received, 'credit_order', booking.id,
+    `Cash — Pesanan #${booking.id.slice(0, 8)}`)
+
+  res.json({ message: 'Cash confirmed' })
+})
+
 router.patch('/:id/done', async (req, res) => {
   const { data: booking } = await supabase.from('bookings').select('*').eq('id', req.params.id).single()
   if (!booking || booking.vendor_id !== req.user!.vendorId) return res.status(404).json({ error: 'Not found' })

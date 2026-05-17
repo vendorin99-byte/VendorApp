@@ -54,6 +54,13 @@ export default function Orders() {
     reload()
   }
 
+  async function confirmCash(id: string) {
+    if (!window.confirm('Konfirmasi bahwa cash sudah diterima dari customer?')) return
+    await api.patch(`/vendor/orders/${id}/confirm-cash`)
+    setSelected(null)
+    reload()
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Pesanan</h1>
@@ -111,6 +118,7 @@ export default function Orders() {
               <Row label="Paket" value={selected.services?.name} />
               <Row label="Tanggal Event" value={selected.event_date} />
               <Row label="Total" value={formatRp(selected.total_amount)} />
+              <Row label="Metode Bayar" value={selected.payment_method || '-'} />
               {selected.notes && <div><span className="text-gray-500">Catatan: </span><span>{selected.notes}</span></div>}
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -121,7 +129,10 @@ export default function Orders() {
                   <button onClick={() => reject(selected.id)} className="flex-1 bg-red-500 text-white rounded-lg py-2 text-sm font-medium">❌ Tolak</button>
                 </>
               )}
-              {selected.status === 'fully_paid' && (
+              {selected.status === 'pending_dp' && selected.payment_method === 'cash' && (
+                <button onClick={() => confirmCash(selected.id)} className="flex-1 bg-green-600 text-white rounded-lg py-2 text-sm font-medium">💵 Konfirmasi Terima Cash</button>
+              )}
+              {(selected.status === 'fully_paid' || selected.status === 'confirmed') && (
                 <button onClick={() => markDone(selected.id)} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-medium">✔ Selesai</button>
               )}
             </div>

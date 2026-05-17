@@ -8,6 +8,7 @@ import authRoutes from './routes/auth'
 import vendorRoutes from './routes/customer/vendors'
 import bookingRoutes from './routes/customer/bookings'
 import customerProfileRoutes from './routes/customer/profile'
+import reviewRoutes from './routes/customer/reviews'
 import orderRoutes from './routes/vendor/orders'
 import serviceRoutes from './routes/vendor/services'
 import portfolioRoutes from './routes/vendor/portfolio'
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/vendors', vendorRoutes)
 app.use('/api/bookings', bookingRoutes)
 app.use('/api/customer/profile', customerProfileRoutes)
+app.use('/api/reviews', reviewRoutes)
 app.use('/api/vendor/orders', orderRoutes)
 app.use('/api/vendor/services', serviceRoutes)
 app.use('/api/vendor/portfolio', portfolioRoutes)
