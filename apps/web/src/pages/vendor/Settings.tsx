@@ -55,6 +55,23 @@ export default function Settings() {
               <input className={input} value={profile.whatsapp || ''} onChange={(e) => setProfile({ ...profile, whatsapp: e.target.value })} placeholder="08xxxxxxxxxx" />
             </Field>
           </div>
+          <Field label={`Jangkauan Layanan: ${profile.service_radius_km || 25} km`}>
+            <div className="space-y-2">
+              <input
+                type="range" min={1} max={200} step={1}
+                value={profile.service_radius_km || 25}
+                onChange={(e) => setProfile({ ...profile, service_radius_km: parseInt(e.target.value) })}
+                className="w-full accent-primary"
+              />
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>1 km</span>
+                <span>50 km</span>
+                <span>100 km</span>
+                <span>200 km</span>
+              </div>
+              <p className="text-xs text-gray-500">Vendor Anda akan muncul di peta customer dalam radius ini</p>
+            </div>
+          </Field>
         </section>
 
         <section className="bg-white rounded-xl border p-5 space-y-4">

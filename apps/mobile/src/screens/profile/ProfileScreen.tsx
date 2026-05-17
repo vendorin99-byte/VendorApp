@@ -1,16 +1,16 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '../../store/authStore'
+import { RootStackParamList } from '../../navigation'
 
-const MENU_ITEMS = [
-  { icon: '📋', label: 'Riwayat Pesanan' },
-  { icon: '⭐', label: 'Ulasan Saya' },
-  { icon: '🔔', label: 'Notifikasi' },
-  { icon: '📄', label: 'Syarat & Ketentuan' },
-  { icon: '🔒', label: 'Kebijakan Privasi' },
-]
+type Nav = NativeStackNavigationProp<RootStackParamList>
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<Nav>()
   const { user, logout } = useAuthStore()
+  const insets = useSafeAreaInsets()
 
   function handleLogout() {
     Alert.alert('Keluar', 'Apakah Anda yakin ingin keluar?', [
@@ -19,22 +19,32 @@ export default function ProfileScreen() {
     ])
   }
 
+  const MENU_ITEMS = [
+    { icon: '✏️', label: 'Edit Profil', onPress: () => navigation.navigate('EditProfile') },
+    { icon: '🔒', label: 'Ganti Password', onPress: () => navigation.navigate('ChangePassword') },
+    { icon: '🤝', label: 'Program Affiliate', onPress: () => navigation.navigate('Affiliate') },
+    { icon: '📋', label: 'Riwayat Pesanan', onPress: () => {} },
+    { icon: '⭐', label: 'Ulasan Saya', onPress: () => {} },
+    { icon: '📄', label: 'Syarat & Ketentuan', onPress: () => {} },
+  ]
+
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.name?.[0] || '?'}</Text>
+          <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() || '?'}</Text>
         </View>
         <Text style={styles.name}>{user?.name}</Text>
         <Text style={styles.email}>{user?.email}</Text>
-        <TouchableOpacity style={styles.editBtn}>
+        <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
           <Text style={styles.editBtnText}>Edit Profil</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.menu}>
         {MENU_ITEMS.map((item) => (
-          <TouchableOpacity key={item.label} style={styles.menuItem}>
+          <TouchableOpacity key={item.label} style={styles.menuItem} onPress={item.onPress}>
             <Text style={styles.menuIcon}>{item.icon}</Text>
             <Text style={styles.menuLabel}>{item.label}</Text>
             <Text style={styles.menuArrow}>›</Text>
@@ -53,7 +63,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#fff', alignItems: 'center', paddingTop: 60, paddingBottom: 24, borderBottomWidth: 1, borderColor: '#E5E7EB' },
+  header: { backgroundColor: '#fff', alignItems: 'center', paddingBottom: 20, borderBottomWidth: 1, borderColor: '#E5E7EB' },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#3B5BDB', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   avatarText: { fontSize: 32, color: '#fff', fontWeight: 'bold' },
   name: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },

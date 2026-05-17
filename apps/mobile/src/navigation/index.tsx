@@ -11,6 +11,10 @@ import BookingScreen from '../screens/booking/BookingScreen'
 import PaymentScreen from '../screens/booking/PaymentScreen'
 import OrderDetailScreen from '../screens/booking/OrderDetailScreen'
 import ChatRoomScreen from '../screens/chat/ChatRoomScreen'
+import RateOrderScreen from '../screens/booking/RateOrderScreen'
+import EditProfileScreen from '../screens/profile/EditProfileScreen'
+import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen'
+import AffiliateScreen from '../screens/profile/AffiliateScreen'
 
 export type RootStackParamList = {
   Splash: undefined
@@ -21,9 +25,13 @@ export type RootStackParamList = {
   Main: undefined
   VendorDetail: { vendorId: string }
   Booking: { vendorId: string; serviceId?: string }
-  Payment: { bookingId: string; amount: number; paymentUrl: string }
+  Payment: { bookingId: string; amount: number; method: string; vendorBank?: { bank_code: string; account_number: string; account_name: string } | null }
   OrderDetail: { bookingId: string }
-  ChatRoom: { roomId: string; vendorName: string }
+  ChatRoom: { roomId: string; vendorName: string; vendorId?: string }
+  EditProfile: undefined
+  ChangePassword: undefined
+  Affiliate: undefined
+  RateOrder: { bookingId: string; vendorName: string }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -49,6 +57,10 @@ export default function RootNavigator() {
           <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: true, title: 'Pembayaran' }} />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: true, title: 'Detail Pesanan' }} />
           <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={{ headerShown: true }} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Affiliate" component={AffiliateScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RateOrder" component={RateOrderScreen} options={{ headerShown: false }} />
         </>
       )}
     </Stack.Navigator>

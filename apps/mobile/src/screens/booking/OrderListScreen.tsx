@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, StatusBar } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
 import { formatRp } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
@@ -28,6 +29,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 
 export default function OrderListScreen() {
   const navigation = useNavigation<Nav>()
+  const insets = useSafeAreaInsets()
   const [activeTab, setActiveTab] = useState('Aktif')
   const [orders, setOrders] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
@@ -49,7 +51,8 @@ export default function OrderListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.title}>Pesanan Saya</Text>
         <View style={styles.tabs}>
           {TABS.map((t) => (
@@ -91,7 +94,7 @@ export default function OrderListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#fff', paddingTop: 50, paddingBottom: 0, borderBottomWidth: 1, borderColor: '#E5E7EB' },
+  header: { backgroundColor: '#fff', paddingBottom: 0, borderBottomWidth: 1, borderColor: '#E5E7EB' },
   title: { fontSize: 20, fontWeight: 'bold', color: '#1F2937', padding: 16, paddingBottom: 12 },
   tabs: { flexDirection: 'row' },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderColor: 'transparent' },

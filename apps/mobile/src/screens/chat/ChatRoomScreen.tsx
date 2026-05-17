@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
 import { useAuthStore } from '../../store/authStore'
 import { formatTime } from '../../utils/date'
 import api from '../../services/api'
 
 type Route = RouteProp<RootStackParamList, 'ChatRoom'>
+type Nav = NativeStackNavigationProp<RootStackParamList>
 
 export default function ChatRoomScreen() {
   const route = useRoute<Route>()
   const { user } = useAuthStore()
-  const { roomId, vendorName } = route.params
-  const navigation = useNavigation()
+  const { roomId, vendorName, vendorId } = route.params
+  const navigation = useNavigation<Nav>()
 
   const [messages, setMessages] = useState<any[]>([])
   const [text, setText] = useState('')
@@ -41,6 +43,11 @@ export default function ChatRoomScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      {vendorId && (
+        <TouchableOpacity style={styles.orderBanner} onPress={() => navigation.navigate('Booking', { vendorId })}>
+          <Text style={styles.orderBannerText}>📅 Sudah sepakat? Buat Pesanan Sekarang →</Text>
+        </TouchableOpacity>
+      )}
       <FlatList
         ref={flatRef}
         data={messages}
@@ -74,6 +81,8 @@ export default function ChatRoomScreen() {
 }
 
 const styles = StyleSheet.create({
+  orderBanner: { backgroundColor: '#EEF2FF', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: '#C7D2FE' },
+  orderBannerText: { color: '#3730A3', fontSize: 13, fontWeight: '600', textAlign: 'center' },
   messageList: { padding: 16, gap: 8 },
   bubble: { maxWidth: '75%', padding: 12, borderRadius: 16 },
   bubbleMine: { backgroundColor: '#3B5BDB', alignSelf: 'flex-end', borderBottomRightRadius: 4 },

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Share } from 'react-native'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
+import { useAuthStore } from '../../store/authStore'
 import { formatRp } from '../../utils/currency'
 import api from '../../services/api'
 
@@ -13,12 +14,28 @@ export default function VendorDetailScreen() {
   const route = useRoute<Route>()
   const navigation = useNavigation<Nav>()
   const { vendorId } = route.params
+  const { user } = useAuthStore()
   const [vendor, setVendor] = useState<any>(null)
   const [selectedImage, setSelectedImage] = useState(0)
 
   useEffect(() => {
     api.get(`/vendors/${vendorId}`).then((r) => setVendor(r.data)).catch(() => {})
   }, [vendorId])
+
+  async function openChat() {
+    const r = await api.post('/chat/rooms', { vendor_id: vendorId })
+    navigation.navigate('ChatRoom', { roomId: r.data.id, vendorName: vendor.business_name, vendorId })
+  }
+
+  async function shareVendor() {
+    try {
+      const profileRes = await api.get('/customer/profile').catch(() => null)
+      const refCode = profileRes?.data?.referral_code || ''
+      const codeNote = refCode ? `\n\n🎁 Pakai kode referral saya *${refCode}* saat daftar!` : ''
+      const message = `Hei! Cek vendor ini di VendorApp 📱\n\n✨ *${vendor.business_name}*\n📂 ${vendor.category}  📍 ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0${codeNote}\n\nDownload VendorApp & masukkan kode referral saat daftar untuk keuntungan lebih!`
+      Share.share({ message, title: vendor.business_name })
+    } catch {}
+  }
 
   if (!vendor) return <View style={styles.center}><ActivityIndicator size="large" color="#3B5BDB" /></View>
 
@@ -49,6 +66,9 @@ export default function VendorDetailScreen() {
           <View style={styles.ratingRow}>
             <Text style={styles.rating}>⭐ {vendor.avg_rating?.toFixed(1)}</Text>
             <Text style={styles.ratingCount}>({vendor.total_reviews} ulasan)</Text>
+            {vendor.service_radius_km && (
+              <Text style={styles.radius}>📍 Radius {vendor.service_radius_km} km</Text>
+            )}
           </View>
 
           {vendor.description && (
@@ -60,14 +80,17 @@ export default function VendorDetailScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Paket Layanan</Text>
+            <View style={styles.chatHint}>
+              <Text style={styles.chatHintText}>💬 Konsultasi via chat sebelum memesan</Text>
+            </View>
             {activeServices.map((s: any) => (
-              <TouchableOpacity key={s.id} style={styles.serviceCard} onPress={() => navigation.navigate('Booking', { vendorId, serviceId: s.id })}>
-                <View>
+              <TouchableOpacity key={s.id} style={styles.serviceCard} onPress={openChat}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.serviceName}>{s.name}</Text>
                   {s.description && <Text style={styles.serviceDesc} numberOfLines={2}>{s.description}</Text>}
                   <Text style={styles.servicePrice}>{formatRp(s.price)}</Text>
                 </View>
-                <Text style={styles.arrow}>›</Text>
+                <Text style={styles.chatTag}>Chat →</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -90,14 +113,14 @@ export default function VendorDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.chatBtn} onPress={async () => {
-          const r = await api.post('/chat/rooms', { vendor_id: vendorId })
-          navigation.navigate('ChatRoom', { roomId: r.data.id, vendorName: vendor.business_name })
-        }}>
-          <Text style={styles.chatBtnText}>💬 Chat</Text>
+        <TouchableOpacity style={styles.shareBtn} onPress={shareVendor}>
+          <Text style={styles.shareBtnText}>🔗</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bookBtn} onPress={() => navigation.navigate('Booking', { vendorId })}>
-          <Text style={styles.bookBtnText}>📅 Pesan Sekarang</Text>
+        <TouchableOpacity style={styles.chatBtn} onPress={openChat}>
+          <Text style={styles.chatBtnText}>💬 Konsultasi</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bookBtn} onPress={openChat}>
+          <Text style={styles.bookBtnText}>📅 Pesan via Chat</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -118,6 +141,10 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, marginBottom: 16 },
   rating: { fontSize: 15, color: '#F59E0B', fontWeight: '600' },
   ratingCount: { fontSize: 13, color: '#9CA3AF' },
+  radius: { fontSize: 12, color: '#6B7280', marginLeft: 8, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  chatHint: { backgroundColor: '#EEF2FF', borderRadius: 8, padding: 10, marginBottom: 10 },
+  chatHintText: { fontSize: 12, color: '#3B5BDB', fontWeight: '500' },
+  chatTag: { fontSize: 13, color: '#3B5BDB', fontWeight: '600' },
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1F2937', marginBottom: 10 },
   desc: { fontSize: 14, color: '#4B5563', lineHeight: 22 },
@@ -131,9 +158,11 @@ const styles = StyleSheet.create({
   reviewName: { fontSize: 13, fontWeight: '600', color: '#374151' },
   reviewRating: { fontSize: 12 },
   reviewComment: { fontSize: 13, color: '#4B5563' },
-  footer: { flexDirection: 'row', padding: 16, gap: 12, borderTopWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#fff' },
+  footer: { flexDirection: 'row', padding: 16, gap: 10, borderTopWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#fff' },
+  shareBtn: { width: 48, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, alignItems: 'center', justifyContent: 'center' },
+  shareBtnText: { fontSize: 20 },
   chatBtn: { flex: 1, borderWidth: 1.5, borderColor: '#3B5BDB', borderRadius: 12, padding: 14, alignItems: 'center' },
-  chatBtnText: { color: '#3B5BDB', fontWeight: '600', fontSize: 15 },
+  chatBtnText: { color: '#3B5BDB', fontWeight: '600', fontSize: 14 },
   bookBtn: { flex: 2, backgroundColor: '#3B5BDB', borderRadius: 12, padding: 14, alignItems: 'center' },
-  bookBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  bookBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 })

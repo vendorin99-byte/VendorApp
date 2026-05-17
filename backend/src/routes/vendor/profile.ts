@@ -29,6 +29,7 @@ const profileSchema = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   operating_hours: z.record(z.string()).optional(),
+  service_radius_km: z.number().int().min(1).max(200).optional(),
 })
 
 router.put('/', async (req, res) => {

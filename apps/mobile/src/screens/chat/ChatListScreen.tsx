@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, RefreshControl } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, RefreshControl, StatusBar } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
 import { formatTime } from '../../utils/date'
 import api from '../../services/api'
@@ -10,6 +11,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>
 
 export default function ChatListScreen() {
   const navigation = useNavigation<Nav>()
+  const insets = useSafeAreaInsets()
   const [rooms, setRooms] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
@@ -23,7 +25,8 @@ export default function ChatListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}><Text style={styles.title}>Pesan</Text></View>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}><Text style={styles.title}>Pesan</Text></View>
       <FlatList
         data={rooms}
         keyExtractor={(r) => r.id}
@@ -32,7 +35,7 @@ export default function ChatListScreen() {
           const other = room.vendors || room.users
           const lastMsg = room.messages?.[room.messages.length - 1]
           return (
-            <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('ChatRoom', { roomId: room.id, vendorName: other?.business_name || other?.name })}>
+            <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('ChatRoom', { roomId: room.id, vendorName: other?.business_name || other?.name, vendorId: room.vendor_id })}>
               <View style={styles.avatar}>
                 {other?.avatar_url
                   ? <Image source={{ uri: other.avatar_url }} style={styles.avatarImg} />
@@ -57,7 +60,7 @@ export default function ChatListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: { paddingTop: 50, paddingBottom: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: '#E5E7EB' },
+  header: { paddingBottom: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: '#E5E7EB' },
   title: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
   item: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderColor: '#F3F4F6', gap: 12 },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#3B5BDB', alignItems: 'center', justifyContent: 'center' },

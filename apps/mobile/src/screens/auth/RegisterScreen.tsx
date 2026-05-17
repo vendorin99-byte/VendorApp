@@ -9,7 +9,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Register'>
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>()
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', ref_code: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -17,7 +17,8 @@ export default function RegisterScreen() {
     setLoading(true)
     setError('')
     try {
-      await api.post('/auth/register', form)
+      const refParam = form.ref_code.trim() ? `?ref=${form.ref_code.trim()}` : ''
+      await api.post(`/auth/register${refParam}`, { name: form.name, email: form.email, phone: form.phone, password: form.password })
       navigation.navigate('OTP', { email: form.email })
     } catch (e: any) {
       setError(e.response?.data?.error || 'Pendaftaran gagal')
@@ -54,6 +55,13 @@ export default function RegisterScreen() {
               />
             </View>
           ))}
+          <TextInput
+            style={[styles.input, { borderStyle: 'dashed' }]}
+            placeholder="Kode Referral (opsional)"
+            value={form.ref_code}
+            onChangeText={(v) => setForm({ ...form, ref_code: v.toUpperCase() })}
+            autoCapitalize="characters"
+          />
 
           {!!error && <Text style={styles.error}>{error}</Text>}
 

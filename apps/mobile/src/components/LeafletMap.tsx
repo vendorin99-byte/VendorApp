@@ -15,6 +15,7 @@ interface Props {
   vendors: Vendor[]
   userLat?: number
   userLng?: number
+  radiusKm?: number
   onVendorPress?: (id: string) => void
   style?: object
 }
@@ -28,7 +29,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'default': '#8B5CF6',
 }
 
-export default function LeafletMap({ vendors, userLat = -6.2, userLng = 106.8, onVendorPress, style }: Props) {
+export default function LeafletMap({ vendors, userLat = -6.2, userLng = 106.8, radiusKm = 10, onVendorPress, style }: Props) {
   const webviewRef = useRef<WebView>(null)
 
   const markersJson = JSON.stringify(vendors.map((v) => ({
@@ -59,9 +60,31 @@ export default function LeafletMap({ vendors, userLat = -6.2, userLng = 106.8, o
 <body>
   <div id="map"></div>
   <script>
-    var map = L.map('map').setView([${userLat}, ${userLng}], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
+    var map = L.map('map', { zoomControl: true }).setView([${userLat}, ${userLng}], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Titik lokasi customer
+    var userIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:#3B5BDB;border:3px solid #fff;box-shadow:0 0 0 3px rgba(59,91,219,0.3)"></div>',
+      iconSize: [16,16], iconAnchor: [8,8],
+    });
+    L.marker([${userLat}, ${userLng}], { icon: userIcon })
+      .addTo(map)
+      .bindPopup('<b>Lokasi Anda</b>');
+
+    // Lingkaran radius
+    L.circle([${userLat}, ${userLng}], {
+      radius: ${radiusKm} * 1000,
+      color: '#3B5BDB',
+      fillColor: '#3B5BDB',
+      fillOpacity: 0.05,
+      weight: 1.5,
+      dashArray: '5,5',
     }).addTo(map);
 
     var vendors = ${markersJson};

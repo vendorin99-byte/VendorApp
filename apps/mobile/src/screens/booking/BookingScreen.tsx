@@ -19,7 +19,17 @@ export default function BookingScreen() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [notes, setNotes] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<string>('dp')
   const [loading, setLoading] = useState(false)
+
+  const PAYMENT_METHODS = [
+    { key: 'dp', label: 'DP dulu', desc: `DP ${selected?.dp_percent || 30}%`, icon: '🔖' },
+    { key: 'lunas', label: 'Bayar Lunas', desc: 'Bayar penuh sekarang', icon: '✅' },
+    { key: 'qris', label: 'QRIS', desc: 'Scan & bayar', icon: '📱' },
+    { key: 'transfer', label: 'Transfer Bank', desc: 'Transfer ke rekening vendor', icon: '🏦' },
+    { key: 'cash', label: 'Tunai', desc: 'Bayar cash saat event', icon: '💵' },
+    { key: 'tempo', label: 'Tempo 7 Hari', desc: 'Bayar setelah event', icon: '📅' },
+  ]
 
   useEffect(() => {
     api.get('/vendor/services').then((r) => {
@@ -39,11 +49,13 @@ export default function BookingScreen() {
         event_date: date,
         event_time: time || undefined,
         notes: notes || undefined,
+        payment_method: paymentMethod,
       })
       navigation.replace('Payment', {
         bookingId: data.booking.id,
-        amount: data.booking.dp_amount,
-        paymentUrl: data.payment_url,
+        amount: data.payment_info.amount,
+        method: paymentMethod,
+        vendorBank: data.payment_info.vendor_bank,
       })
     } catch (e: any) {
       Alert.alert('Gagal', e.response?.data?.error || 'Terjadi kesalahan')
@@ -53,6 +65,10 @@ export default function BookingScreen() {
   }
 
   const dpAmount = selected ? Math.floor(selected.price * (selected.dp_percent / 100)) : 0
+  const payNow = !selected ? 0
+    : (paymentMethod === 'dp') ? dpAmount
+    : (paymentMethod === 'tempo') ? 0
+    : selected.price
 
   return (
     <ScrollView style={styles.container}>
@@ -100,6 +116,21 @@ export default function BookingScreen() {
         numberOfLines={4}
       />
 
+      <Text style={styles.sectionTitle}>Metode Pembayaran</Text>
+      <View style={styles.methodGrid}>
+        {PAYMENT_METHODS.map((m) => (
+          <TouchableOpacity
+            key={m.key}
+            style={[styles.methodCard, paymentMethod === m.key && styles.methodCardActive]}
+            onPress={() => setPaymentMethod(m.key)}
+          >
+            <Text style={styles.methodIcon}>{m.icon}</Text>
+            <Text style={[styles.methodLabel, paymentMethod === m.key && styles.methodLabelActive]}>{m.label}</Text>
+            <Text style={styles.methodDesc}>{m.desc}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {selected && (
         <View style={styles.summary}>
           <Text style={styles.summaryTitle}>Ringkasan Pesanan</Text>
@@ -111,7 +142,12 @@ export default function BookingScreen() {
       )}
 
       <TouchableOpacity style={[styles.btn, (!selected || !date) && styles.btnDisabled]} onPress={handleBook} disabled={loading || !selected || !date}>
-        <Text style={styles.btnText}>{loading ? 'Memproses...' : `Lanjut Bayar DP ${selected ? formatRp(dpAmount) : ''}`}</Text>
+        <Text style={styles.btnText}>
+          {loading ? 'Memproses...' :
+            paymentMethod === 'tempo' ? 'Pesan Sekarang (Bayar Nanti)' :
+            paymentMethod === 'cash' ? 'Pesan Sekarang (Bayar Tunai)' :
+            `Lanjut Bayar ${payNow ? formatRp(payNow) : ''}`}
+        </Text>
       </TouchableOpacity>
 
       <View style={{ height: 32 }} />
@@ -135,6 +171,13 @@ const styles = StyleSheet.create({
   summaryTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   dpAmount: { color: '#3B5BDB', fontWeight: 'bold' },
+  methodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  methodCard: { width: '30%', flexGrow: 1, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, padding: 10, alignItems: 'center', backgroundColor: '#fff' },
+  methodCardActive: { borderColor: '#3B5BDB', backgroundColor: '#EEF2FF' },
+  methodIcon: { fontSize: 20, marginBottom: 4 },
+  methodLabel: { fontSize: 12, fontWeight: '600', color: '#374151', textAlign: 'center' },
+  methodLabelActive: { color: '#3B5BDB' },
+  methodDesc: { fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginTop: 2 },
   btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
   btnDisabled: { backgroundColor: '#93C5FD' },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, ScrollView, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native'
+import { View, Text, TextInput, ScrollView, FlatList, TouchableOpacity, StyleSheet, RefreshControl, StatusBar } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
 import VendorCard from '../../components/VendorCard'
 import AdBanner from '../../components/AdBanner'
@@ -14,6 +15,7 @@ const CATEGORIES = ['Semua', 'EO', 'Fotografer', 'Wedding', 'Katering', 'Dekoras
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>()
+  const insets = useSafeAreaInsets()
   const [vendors, setVendors] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('Semua')
@@ -40,9 +42,10 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {!adShown && <AdPopup />}
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TextInput
           style={styles.searchInput}
           placeholder="🔍  Cari jasa, vendor, dan lainnya"
@@ -96,7 +99,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12 },
+  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 10 },
   searchInput: { backgroundColor: '#F3F4F6', borderRadius: 12, padding: 12, fontSize: 15 },
   chips: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
   chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
