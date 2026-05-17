@@ -61,7 +61,7 @@ export default function OTPScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>VendorIn</Text>
+      <Text style={styles.logo}>VendorApp</Text>
       <Text style={styles.title}>Kode Verifikasi Terkirim</Text>
       <Text style={styles.subtitle}>{`${mm}:${ss}`}</Text>
 

@@ -68,6 +68,7 @@ export default function VendorDetailScreen() {
             {vendor.verified && <Text>✅</Text>}
           </View>
           <Text style={styles.meta}>{vendor.category} • {vendor.city}</Text>
+          {vendor.address && <Text style={styles.address}>📍 {vendor.address}</Text>}
           <View style={styles.ratingRow}>
             <Text style={styles.rating}>⭐ {vendor.avg_rating?.toFixed(1)}</Text>
             <Text style={styles.ratingCount}>({vendor.total_reviews} ulasan)</Text>
@@ -143,6 +144,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontSize: 22, fontWeight: 'bold', color: '#1F2937', flex: 1 },
   meta: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  address: { fontSize: 13, color: '#6B7280', marginTop: 2 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, marginBottom: 16 },
   rating: { fontSize: 15, color: '#F59E0B', fontWeight: '600' },
   ratingCount: { fontSize: 13, color: '#9CA3AF' },

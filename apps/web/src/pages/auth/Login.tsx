@@ -60,6 +60,9 @@ export default function Login() {
             />
           </div>
           {error && <p className="text-red-600 text-sm">{error}</p>}
+          <div className="text-right">
+            <Link to="/mitra/forgot-password" className="text-sm text-gray-500 hover:text-primary">Lupa password?</Link>
+          </div>
           <button
             type="submit" disabled={loading}
             className="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark disabled:opacity-60 transition-colors"

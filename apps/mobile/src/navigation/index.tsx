@@ -15,6 +15,8 @@ import RateOrderScreen from '../screens/booking/RateOrderScreen'
 import EditProfileScreen from '../screens/profile/EditProfileScreen'
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen'
 import AffiliateScreen from '../screens/profile/AffiliateScreen'
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen'
 
 export type RootStackParamList = {
   Splash: undefined
@@ -22,6 +24,8 @@ export type RootStackParamList = {
   Login: undefined
   Register: undefined
   OTP: { email: string }
+  ForgotPassword: undefined
+  ResetPassword: { email: string }
   Main: undefined
   VendorDetail: { vendorId: string }
   Booking: { vendorId: string; serviceId?: string }
@@ -48,6 +52,8 @@ export default function RootNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="OTP" component={OTPScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: true, title: 'Lupa Password' }} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ headerShown: true, title: 'Reset Password' }} />
         </>
       ) : (
         <>

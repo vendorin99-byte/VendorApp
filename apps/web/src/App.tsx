@@ -6,6 +6,8 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import WaitingVerify from './pages/auth/WaitingVerify'
 import InvitePage from './pages/invite/InvitePage'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
       <Route path="/mitra/login" element={<Login />} />
       <Route path="/mitra/register" element={<Register />} />
       <Route path="/mitra/waiting" element={<WaitingVerify />} />
+      <Route path="/mitra/forgot-password" element={<ForgotPassword />} />
+      <Route path="/mitra/reset-password" element={<ResetPassword />} />
       {vendorRoutes}
       {adminRoutes}
       <Route path="*" element={<div className="flex h-screen items-center justify-center text-2xl">404 — Halaman tidak ditemukan</div>} />

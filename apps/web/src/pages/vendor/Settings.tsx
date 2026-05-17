@@ -55,6 +55,9 @@ export default function Settings() {
               <input className={input} value={profile.whatsapp || ''} onChange={(e) => setProfile({ ...profile, whatsapp: e.target.value })} placeholder="08xxxxxxxxxx" />
             </Field>
           </div>
+          <Field label="Alamat Lengkap (opsional)">
+            <input className={input} value={profile.address || ''} onChange={(e) => setProfile({ ...profile, address: e.target.value })} placeholder="Jl. Contoh No. 1, Kelurahan, Kecamatan" />
+          </Field>
           <Field label={`Jangkauan Layanan: ${profile.service_radius_km || 25} km`}>
             <div className="space-y-2">
               <input

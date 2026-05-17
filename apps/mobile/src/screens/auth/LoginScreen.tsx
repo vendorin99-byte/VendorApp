@@ -58,6 +58,10 @@ export default function LoginScreen() {
           <Text style={styles.btnPrimaryText}>{loading ? 'Masuk...' : 'Masuk'}</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotBtn}>
+          <Text style={styles.forgotText}>Lupa password?</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('Register')}>
           <Text style={styles.btnOutlineText}>Daftar Sekarang</Text>
         </TouchableOpacity>
@@ -76,6 +80,8 @@ const styles = StyleSheet.create({
   error: { color: '#EF4444', fontSize: 13 },
   btnPrimary: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center' },
   btnPrimaryText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  forgotBtn: { alignItems: 'flex-end' },
+  forgotText: { color: '#6B7280', fontSize: 13 },
   btnOutline: { borderWidth: 1.5, borderColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center' },
   btnOutlineText: { color: '#3B5BDB', fontWeight: '600', fontSize: 16 },
 })
