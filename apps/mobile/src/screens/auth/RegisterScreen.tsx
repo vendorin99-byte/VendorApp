@@ -36,7 +36,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../../assets/logo-only.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>Pendaftaran</Text>
         <Text style={styles.subtitle}>Silahkan isi data berikut{'\n'}untuk melanjutkan</Text>
 
