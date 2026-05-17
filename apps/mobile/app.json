@@ -16,12 +16,35 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3B5BDB"
       },
-      "package": "com.vendorin.app"
+      "package": "com.vendorin.app",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.vendorin.app"
     },
-    "plugins": ["expo-secure-store", "expo-location", "expo-notifications"]
+    "plugins": [
+      "expo-secure-store",
+      "expo-location",
+      "expo-notifications"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/6d185c62-038d-49a2-9e24-9c9a81fdcb38",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6d185c62-038d-49a2-9e24-9c9a81fdcb38"
+      }
+    },
+    "owner": "vendorin"
   }
 }
