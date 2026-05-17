@@ -5,11 +5,13 @@ import LandingPage from './pages/landing/LandingPage'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import WaitingVerify from './pages/auth/WaitingVerify'
+import InvitePage from './pages/invite/InvitePage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/mitra" replace />} />
+      <Route path="/i/:refCode" element={<InvitePage />} />
       <Route path="/admin" element={<Navigate to="/x-ctrl-panel" replace />} />
       <Route path="/mitra" element={<LandingPage />} />
       <Route path="/mitra/login" element={<Login />} />

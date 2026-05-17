@@ -31,9 +31,14 @@ export default function VendorDetailScreen() {
     try {
       const profileRes = await api.get('/customer/profile').catch(() => null)
       const refCode = profileRes?.data?.referral_code || ''
-      const codeNote = refCode ? `\n\n🎁 Pakai kode referral saya *${refCode}* saat daftar!` : ''
-      const message = `Hei! Cek vendor ini di VendorApp 📱\n\n✨ *${vendor.business_name}*\n📂 ${vendor.category}  📍 ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0${codeNote}\n\nDownload VendorApp & masukkan kode referral saat daftar untuk keuntungan lebih!`
-      Share.share({ message, title: vendor.business_name })
+      if (refCode) {
+        const link = `https://web-henna-five-13.vercel.app/i/${refCode}?vendor=${vendorId}`
+        const message = `Hei! Cek vendor ini di VendorApp 📱\n\n✨ *${vendor.business_name}*\n📂 ${vendor.category}  📍 ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0\n\nBuka link ini untuk download & daftar:\n${link}`
+        Share.share({ message, title: vendor.business_name })
+      } else {
+        const message = `Hei! Cek vendor *${vendor.business_name}* di VendorApp — platform jasa event terpercaya!\n📂 ${vendor.category}  📍 ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0`
+        Share.share({ message, title: vendor.business_name })
+      }
     } catch {}
   }
 

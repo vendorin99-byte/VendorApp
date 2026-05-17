@@ -19,10 +19,11 @@ export default function AffiliateScreen() {
   }, [])
 
   async function handleShare() {
-    if (!data?.referral_link) return
+    if (!data?.referral_code) return
+    const link = `https://web-henna-five-13.vercel.app/i/${data.referral_code}`
     await Share.share({
-      message: `Temukan vendor acara terbaik di VendorApp! Daftar sekarang pakai link saya dan dapatkan kemudahan booking vendor:\n${data.referral_link}`,
-      url: data.referral_link,
+      message: `Hei! Coba VendorApp — platform booking vendor jasa acara terpercaya 🎉\n\nBuka link undangan saya, download app-nya, dan daftar pakai kode *${data.referral_code}*:\n${link}`,
+      url: link,
     })
   }
 
