@@ -77,7 +77,7 @@ router.get('/affiliate', async (req, res) => {
 
   res.json({
     referral_code: user?.referral_code,
-    referral_link: `https://vendorapp.vercel.app/daftar?ref=${user?.referral_code}`,
+    referral_link: `${process.env.FRONTEND_URL || 'https://web-henna-five-13.vercel.app'}/daftar?ref=${user?.referral_code}`,
     balance: user?.affiliate_balance || 0,
     total_referrals: totalReferrals || 0,
     transactions: txns || [],

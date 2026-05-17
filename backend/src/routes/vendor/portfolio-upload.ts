@@ -1,37 +1,37 @@
-import { Router, Request, Response } from 'express'
+import { Router } from 'express'
+import multer from 'multer'
 import { requireAuth } from '../../middlewares/auth'
 import { requireRole } from '../../middlewares/roleCheck'
 import { supabase } from '../../lib/supabase'
 
 const router = Router()
-
 router.use(requireAuth, requireRole('vendor'))
 
-router.post('/upload', async (req: Request, res: Response) => {
-  const contentType = req.headers['content-type'] || ''
-  if (!contentType.includes('multipart/form-data')) {
-    return res.status(400).json({ error: 'multipart/form-data required' })
-  }
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true)
+    else cb(new Error('Hanya file gambar yang diizinkan'))
+  },
+})
 
-  const chunks: Buffer[] = []
-  let filename = `portfolio-${req.user!.vendorId}-${Date.now()}.jpg`
-  let mimeType = 'image/jpeg'
+router.post('/upload', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' })
 
-  await new Promise<void>((resolve) => {
-    req.on('data', (chunk) => chunks.push(chunk))
-    req.on('end', resolve)
-  })
-
-  const buffer = Buffer.concat(chunks)
+  const ext = req.file.originalname.split('.').pop() || 'jpg'
+  const filename = `${req.user!.vendorId}/${Date.now()}.${ext}`
 
   const { data, error } = await supabase.storage
     .from('portfolios')
-    .upload(`${req.user!.vendorId}/${filename}`, buffer, { contentType: mimeType, upsert: false })
+    .upload(filename, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+    })
 
   if (error) return res.status(500).json({ error: error.message })
 
   const { data: urlData } = supabase.storage.from('portfolios').getPublicUrl(data.path)
-
   res.json({ url: urlData.publicUrl, path: data.path })
 })
 
