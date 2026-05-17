@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -32,7 +32,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>VendorIn</Text>
+        <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.subtitle}>Silahkan masuk dengan akun anda</Text>
       </View>
 
@@ -69,7 +69,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 24 },
   header: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { fontSize: 32, fontWeight: 'bold', color: '#3B5BDB' },
+  logo: { width: 120, height: 120 },
   subtitle: { fontSize: 15, color: '#6B7280', marginTop: 8, textAlign: 'center' },
   form: { gap: 12, paddingBottom: 32 },
   input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 14, fontSize: 15 },

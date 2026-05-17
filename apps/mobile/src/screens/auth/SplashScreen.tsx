@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, Image, StyleSheet } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -16,23 +16,21 @@ export default function SplashScreen() {
       await loadFromStorage()
       setTimeout(() => {
         navigation.replace(token ? 'Main' : 'Onboarding')
-      }, 1500)
+      }, 1800)
     }
     init()
   }, [])
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>⚡</Text>
-      <Text style={styles.name}>VendorIn</Text>
+      <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.tagline}>Temukan Jasa Terbaik untuk Acaramu</Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#3B5BDB', alignItems: 'center', justifyContent: 'center' },
-  logo: { fontSize: 60, marginBottom: 12 },
-  name: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-  tagline: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 8 },
+  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 40 },
+  logo: { width: 200, height: 200 },
+  tagline: { fontSize: 14, color: '#6B7280', marginTop: 16, textAlign: 'center' },
 })

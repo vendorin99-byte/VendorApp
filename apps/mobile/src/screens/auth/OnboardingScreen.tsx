@@ -7,7 +7,7 @@ import { RootStackParamList } from '../../navigation'
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>
 
 const slides = [
-  { title: 'Selamat Datang di VendorIn', desc: 'Platform terpercaya untuk menemukan vendor acara terbaik di Indonesia', emoji: '🎉' },
+  { title: 'Selamat Datang di VendorApp', desc: 'Platform terpercaya untuk menemukan vendor acara terbaik di Indonesia', emoji: '🎉' },
   { title: 'Perbandingan Harga Mudah', desc: 'Bandingkan harga dan paket dari ratusan vendor dalam satu aplikasi', emoji: '💡' },
   { title: 'Vendor Terlengkap', desc: 'EO, fotografer, katering, dekorasi, sewa mobil, dan masih banyak lagi', emoji: '🌟' },
 ]

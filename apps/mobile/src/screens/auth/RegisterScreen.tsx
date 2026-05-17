@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -36,7 +36,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.logo}>VendorIn</Text>
+        <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>Pendaftaran</Text>
         <Text style={styles.subtitle}>Silahkan isi data berikut{'\n'}untuk melanjutkan</Text>
 
@@ -72,7 +72,7 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#fff', padding: 24, alignItems: 'center' },
-  logo: { fontSize: 28, fontWeight: 'bold', color: '#3B5BDB', marginTop: 40 },
+  logo: { width: 100, height: 100, marginTop: 40 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#1F2937', marginTop: 24 },
   subtitle: { fontSize: 15, color: '#6B7280', textAlign: 'center', marginTop: 8, marginBottom: 24 },
   form: { width: '100%', gap: 12 },
