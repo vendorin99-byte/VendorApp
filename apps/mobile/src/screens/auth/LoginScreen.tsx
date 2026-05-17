@@ -33,7 +33,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <View style={styles.header}>
-        <Image source={require('../../../assets/logo-only.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.subtitle}>Silahkan masuk dengan akun anda</Text>
       </View>
 

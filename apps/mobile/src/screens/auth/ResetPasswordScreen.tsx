@@ -38,7 +38,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <Image source={require('../../../assets/logo-only.png')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Buat Password Baru</Text>
       <Text style={styles.subtitle}>Kode reset dikirim ke{'\n'}<Text style={{ color: '#3B5BDB', fontWeight: '600' }}>{email}</Text></Text>
 

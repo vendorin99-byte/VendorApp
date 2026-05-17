@@ -29,7 +29,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <Image source={require('../../../assets/logo-only.png')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Lupa Password</Text>
       <Text style={styles.subtitle}>Masukkan email Anda, kami akan kirim{'\n'}kode reset password ke inbox Anda</Text>
 
