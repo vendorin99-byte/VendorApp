@@ -1,9 +1,9 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { requireAuth, } from '../../middlewares/auth'
+import { requireAuth } from '../../middlewares/auth'
 import { requireRole } from '../../middlewares/roleCheck'
 import { supabase } from '../../lib/supabase'
-import { createInvoice } from '../../services/xendit'
+import { creditWallet } from '../../services/wallet'
 
 const router = Router()
 
@@ -13,19 +13,26 @@ const bookingSchema = z.object({
   event_date: z.string(),
   event_time: z.string().optional(),
   notes: z.string().optional(),
+  payment_method: z.enum(['dp', 'lunas', 'cash', 'qris', 'transfer', 'tempo']).default('dp'),
 })
 
+// ── Buat Booking ─────────────────────────────────────────────────────────────
 router.post('/', requireAuth, requireRole('customer'), async (req, res) => {
   const parsed = bookingSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
 
-  const { vendor_id, service_id, event_date, event_time, notes } = parsed.data
+  const { vendor_id, service_id, event_date, event_time, notes, payment_method } = parsed.data
 
   const { data: service } = await supabase.from('services').select('*').eq('id', service_id).single()
   if (!service) return res.status(404).json({ error: 'Service not found' })
 
-  const platformFee = Math.floor(service.price * 0.01)
-  const dpAmount = Math.floor(service.price * (service.dp_percent / 100))
+  const { data: vendor } = await supabase.from('vendors').select('wallet_balance, bank_accounts:vendor_bank_accounts(bank_code, account_number, account_name)').eq('id', vendor_id).single()
+
+  const platformFee = Math.floor(service.price * 0.02)
+  const dpAmount = payment_method === 'lunas' || payment_method === 'cash' || payment_method === 'qris'
+    ? service.price
+    : Math.floor(service.price * (service.dp_percent / 100))
+  const vendorReceived = service.price - platformFee
 
   const { data: booking, error } = await supabase.from('bookings').insert({
     customer_id: req.user!.id,
@@ -37,29 +44,146 @@ router.post('/', requireAuth, requireRole('customer'), async (req, res) => {
     total_amount: service.price,
     dp_amount: dpAmount,
     platform_fee: platformFee,
-    vendor_received: service.price - platformFee,
-    status: 'pending_dp',
+    vendor_received: vendorReceived,
+    payment_method,
+    status: payment_method === 'tempo' ? 'confirmed' : 'pending_dp',
   }).select().single()
 
   if (error) return res.status(500).json({ error: error.message })
 
-  const invoice = await createInvoice({
-    externalId: `booking-dp-${booking.id}`,
-    amount: dpAmount,
-    payerEmail: req.user!.email,
-    description: `DP Booking ${service.name}`,
-  })
-
   await supabase.from('transactions').insert({
     booking_id: booking.id,
     amount: dpAmount,
-    type: 'dp',
-    xendit_invoice_id: (invoice as any).id,
+    type: payment_method === 'lunas' || payment_method === 'qris' || payment_method === 'cash' ? 'full' : 'dp',
+    payment_method,
+    status: payment_method === 'tempo' ? 'pending' : 'pending',
   })
 
-  res.status(201).json({ booking, payment_url: (invoice as any).invoice_url })
+  // Tempo: langsung confirmed, bayar nanti
+  if (payment_method === 'tempo') {
+    await supabase.from('vendors').update({
+      wallet_pending: (vendor as any)?.wallet_pending || 0 + vendorReceived,
+    }).eq('id', vendor_id)
+  }
+
+  const bankInfo = (vendor as any)?.bank_accounts?.[0]
+
+  res.status(201).json({
+    booking,
+    payment_info: {
+      method: payment_method,
+      amount: dpAmount,
+      total: service.price,
+      vendor_bank: bankInfo || null,
+    },
+  })
 })
 
+// ── Simulasi Pembayaran (tanpa Xendit, untuk prototype) ──────────────────────
+router.post('/:id/simulate-pay', requireAuth, async (req, res) => {
+  const { type = 'dp' } = req.body  // 'dp' | 'remaining' | 'full'
+
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('*, services(name)')
+    .eq('id', req.params.id)
+    .single()
+
+  if (!booking) return res.status(404).json({ error: 'Booking not found' })
+
+  const isOwner = booking.customer_id === req.user!.id || req.user!.role === 'admin'
+  if (!isOwner) return res.status(403).json({ error: 'Forbidden' })
+
+  const isFullPayment = type === 'full' ||
+    booking.payment_method === 'lunas' ||
+    booking.payment_method === 'qris' ||
+    booking.payment_method === 'cash' ||
+    type === 'remaining'
+
+  const newStatus = isFullPayment ? 'fully_paid' : 'dp_paid'
+  const paidAmount = isFullPayment ? booking.total_amount : booking.dp_amount
+
+  await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id)
+  await supabase.from('transactions').update({ status: 'paid', paid_at: new Date().toISOString() })
+    .eq('booking_id', booking.id).eq('status', 'pending')
+
+  if (isFullPayment) {
+    // Kredit langsung ke wallet vendor
+    await creditWallet(
+      booking.vendor_id,
+      booking.vendor_received,
+      'credit_order',
+      booking.id,
+      `Pesanan #${booking.id.slice(0, 8)} — ${(booking.services as any)?.name || 'Layanan'}`
+    )
+  } else {
+    // DP: masuk ke pending (escrow)
+    const { data: vendor } = await supabase.from('vendors').select('wallet_pending').eq('id', booking.vendor_id).single()
+    await supabase.from('vendors').update({
+      wallet_pending: ((vendor?.wallet_pending) || 0) + booking.dp_amount,
+    }).eq('id', booking.vendor_id)
+  }
+
+  res.json({ success: true, status: newStatus, amount_paid: paidAmount })
+})
+
+// ── Vendor konfirmasi cash ───────────────────────────────────────────────────
+router.post('/:id/confirm-cash', requireAuth, requireRole('vendor'), async (req, res) => {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('*, services(name)')
+    .eq('id', req.params.id)
+    .eq('vendor_id', req.user!.vendorId)
+    .single()
+
+  if (!booking) return res.status(404).json({ error: 'Not found' })
+  if (booking.payment_method !== 'cash') return res.status(400).json({ error: 'Bukan pesanan cash' })
+
+  await supabase.from('bookings').update({ status: 'fully_paid' }).eq('id', booking.id)
+  await supabase.from('transactions').update({ status: 'paid', paid_at: new Date().toISOString() })
+    .eq('booking_id', booking.id)
+
+  await creditWallet(
+    booking.vendor_id,
+    booking.vendor_received,
+    'credit_order',
+    booking.id,
+    `Cash — Pesanan #${booking.id.slice(0, 8)} — ${(booking.services as any)?.name}`
+  )
+
+  res.json({ success: true })
+})
+
+// ── Bayar sisa (lunas) ───────────────────────────────────────────────────────
+router.post('/:id/pay-remaining', requireAuth, requireRole('customer'), async (req, res) => {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('*, services(name)')
+    .eq('id', req.params.id)
+    .eq('customer_id', req.user!.id)
+    .single()
+
+  if (!booking) return res.status(404).json({ error: 'Booking not found' })
+  if (!['dp_paid', 'confirmed', 'tempo'].includes(booking.status)) {
+    return res.status(400).json({ error: 'Status booking tidak memungkinkan pelunasan' })
+  }
+
+  const remaining = booking.total_amount - booking.dp_amount
+
+  await supabase.from('transactions').insert({
+    booking_id: booking.id,
+    amount: remaining,
+    type: 'remaining',
+    payment_method: booking.payment_method,
+    status: 'pending',
+  })
+
+  await supabase.from('bookings').update({ status: 'pending_remaining' }).eq('id', booking.id)
+
+  res.json({ booking_id: booking.id, amount: remaining, payment_method: booking.payment_method })
+})
+
+// ── List pesanan saya ────────────────────────────────────────────────────────
 router.get('/my', requireAuth, requireRole('customer'), async (req, res) => {
   const { status } = req.query
   let query = supabase
@@ -75,10 +199,11 @@ router.get('/my', requireAuth, requireRole('customer'), async (req, res) => {
   res.json(data)
 })
 
+// ── Detail pesanan ───────────────────────────────────────────────────────────
 router.get('/:id', requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('bookings')
-    .select(`*, vendors(*), services(*), transactions(*)`)
+    .select(`*, vendors(*, vendor_bank_accounts(*)), services(*), transactions(*)`)
     .eq('id', req.params.id)
     .single()
 
@@ -88,38 +213,6 @@ router.get('/:id', requireAuth, async (req, res) => {
   if (!isOwner && req.user!.role !== 'admin') return res.status(403).json({ error: 'Forbidden' })
 
   res.json(data)
-})
-
-router.post('/:id/pay-remaining', requireAuth, requireRole('customer'), async (req, res) => {
-  const { data: booking } = await supabase
-    .from('bookings')
-    .select('*, services(name)')
-    .eq('id', req.params.id)
-    .eq('customer_id', req.user!.id)
-    .single()
-
-  if (!booking) return res.status(404).json({ error: 'Booking not found' })
-  if (booking.status !== 'confirmed') return res.status(400).json({ error: 'Booking belum dikonfirmasi vendor' })
-
-  const remaining = booking.total_amount - booking.dp_amount
-
-  const invoice = await createInvoice({
-    externalId: `booking-remaining-${booking.id}`,
-    amount: remaining,
-    payerEmail: req.user!.email,
-    description: `Pelunasan Booking ${(booking.services as any).name}`,
-  })
-
-  await supabase.from('transactions').insert({
-    booking_id: booking.id,
-    amount: remaining,
-    type: 'remaining',
-    xendit_invoice_id: (invoice as any).id,
-  })
-
-  await supabase.from('bookings').update({ status: 'pending_remaining' }).eq('id', booking.id)
-
-  res.json({ amount: remaining, payment_url: (invoice as any).invoice_url })
 })
 
 export default router
