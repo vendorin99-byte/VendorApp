@@ -39,12 +39,15 @@ router.post('/register', async (req, res) => {
 
   const { email, name, phone, password, ref } = parsed.data
 
-  const existing = await supabase.from('users').select('id').eq('email', email).single()
-  if (existing.data) return res.status(400).json({ error: 'Email sudah terdaftar' })
+  const { data: existing } = await supabase.from('users').select('id, is_verified').eq('email', email).maybeSingle()
+  if (existing) {
+    if (!existing.is_verified) return res.status(400).json({ error: 'Email sudah terdaftar tapi belum diverifikasi. Gunakan tombol "Kirim Ulang OTP".' })
+    return res.status(400).json({ error: 'Email sudah terdaftar' })
+  }
 
   let referred_by: string | null = null
   if (ref) {
-    const { data: referrer } = await supabase.from('users').select('id').eq('referral_code', ref).single()
+    const { data: referrer } = await supabase.from('users').select('id').eq('referral_code', ref).maybeSingle()
     if (referrer) referred_by = referrer.id
   }
 
@@ -57,7 +60,10 @@ router.post('/register', async (req, res) => {
     referral_code, referred_by,
   })
 
-  if (error) return res.status(400).json({ error: error.message })
+  if (error) {
+    if (error.code === '23505') return res.status(400).json({ error: 'Email sudah terdaftar' })
+    return res.status(400).json({ error: error.message })
+  }
 
   // Generate & store OTP
   const otp = generateOTP()
@@ -78,8 +84,8 @@ router.post('/register-vendor', async (req, res) => {
     return res.status(400).json({ error: 'Semua field wajib diisi' })
   }
 
-  const existing = await supabase.from('users').select('id').eq('email', email).single()
-  if (existing.data) return res.status(400).json({ error: 'Email sudah terdaftar' })
+  const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle()
+  if (existing) return res.status(400).json({ error: 'Email sudah terdaftar' })
 
   const password_hash = await bcrypt.hash(password, 10)
 
