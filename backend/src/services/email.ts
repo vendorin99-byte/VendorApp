@@ -14,7 +14,14 @@ async function send(payload: Parameters<Resend['emails']['send']>[0]) {
     console.log('[email] Resend not configured, skipping:', payload.subject)
     return
   }
-  return client.emails.send(payload)
+  console.log('[email] Sending to:', payload.to, '| Subject:', payload.subject, '| From:', payload.from)
+  const result = await client.emails.send(payload)
+  if ((result as any).error) {
+    console.error('[email] Resend error:', JSON.stringify((result as any).error))
+  } else {
+    console.log('[email] Sent OK, id:', (result as any).data?.id)
+  }
+  return result
 }
 
 export async function sendOTPEmail(to: string, name: string, otp: string) {
