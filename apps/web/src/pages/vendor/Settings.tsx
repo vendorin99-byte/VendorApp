@@ -7,11 +7,12 @@ const CATEGORIES = ['Wedding Organizer', 'Fotografer', 'Event Organizer', 'Kater
 export default function Settings() {
   const { logout } = useAuthStore()
   const [profile, setProfile] = useState<any>(null)
+  const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    api.get('/vendor/profile').then((r) => setProfile(r.data)).catch(() => {})
+    api.get('/vendor/profile').then((r) => setProfile(r.data)).catch(() => setLoadError(true))
   }, [])
 
   async function handleSave(e: React.FormEvent) {
@@ -25,6 +26,13 @@ export default function Settings() {
       setSaving(false)
     }
   }
+
+  if (loadError) return (
+    <div className="p-8 text-center">
+      <p className="text-red-500 mb-3">Gagal memuat profil. Coba logout lalu login ulang.</p>
+      <button onClick={logout} className="text-sm text-red-600 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-50">Logout</button>
+    </div>
+  )
 
   if (!profile) return <div className="text-gray-400 p-8">Memuat...</div>
 

@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Share } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Share, StatusBar } from 'react-native'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
 import { useAuthStore } from '../../store/authStore'
+import { useTheme } from '../../hooks/useTheme'
 import { formatRp } from '../../utils/currency'
 import api from '../../services/api'
 
 type Route = RouteProp<RootStackParamList, 'VendorDetail'>
 type Nav = NativeStackNavigationProp<RootStackParamList>
 
+const TABS = ['Tentang', 'Layanan & Harga', 'Ulasan']
+
 export default function VendorDetailScreen() {
   const route = useRoute<Route>()
   const navigation = useNavigation<Nav>()
+  const insets = useSafeAreaInsets()
   const { vendorId } = route.params
   const { user } = useAuthStore()
+  const { isDark, bg, card, cardBorder, text, subtext, statusBar, divider } = useTheme()
   const [vendor, setVendor] = useState<any>(null)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [activeTab, setActiveTab] = useState(0)
 
   useEffect(() => {
     api.get(`/vendors/${vendorId}`).then((r) => setVendor(r.data)).catch(() => {})
@@ -31,145 +38,216 @@ export default function VendorDetailScreen() {
     try {
       const profileRes = await api.get('/customer/profile').catch(() => null)
       const refCode = profileRes?.data?.referral_code || ''
-      if (refCode) {
-        const link = `https://web-henna-five-13.vercel.app/i/${refCode}?vendor=${vendorId}`
-        const message = `Hei! Cek vendor ini di VendorApp 📱\n\n✨ *${vendor.business_name}*\n📂 ${vendor.category}  📍 ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0\n\nBuka link ini untuk download & daftar:\n${link}`
-        Share.share({ message, title: vendor.business_name })
-      } else {
-        const message = `Hei! Cek vendor *${vendor.business_name}* di VendorApp — platform jasa event terpercaya!\n📂 ${vendor.category}  📍 ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0`
-        Share.share({ message, title: vendor.business_name })
-      }
+      const link = refCode ? `https://web-henna-five-13.vercel.app/i/${refCode}?vendor=${vendorId}` : ''
+      const message = `Hei! Cek vendor *${vendor.business_name}* di VendorApp 📱\n${vendor.category} • ${vendor.city}\n⭐ ${vendor.avg_rating?.toFixed(1)}/5.0${link ? '\n' + link : ''}`
+      Share.share({ message, title: vendor.business_name })
     } catch {}
   }
 
-  if (!vendor) return <View style={styles.center}><ActivityIndicator size="large" color="#3B5BDB" /></View>
+  if (!vendor) {
+    return (
+      <View style={[styles.center, { backgroundColor: bg }]}>
+        <StatusBar barStyle={statusBar} backgroundColor={bg} />
+        <ActivityIndicator size="large" color="#3B5BDB" />
+      </View>
+    )
+  }
 
   const activeServices = vendor.services?.filter((s: any) => s.is_active) || []
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {vendor.portfolios?.length > 0 && (
+    <View style={[styles.root, { backgroundColor: bg }]}>
+      <StatusBar barStyle={statusBar} backgroundColor={bg} />
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Hero image */}
+        {vendor.portfolios?.length > 0 ? (
           <View>
             <Image source={{ uri: vendor.portfolios[selectedImage]?.image_url }} style={styles.cover} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
-              {vendor.portfolios.map((p: any, i: number) => (
-                <TouchableOpacity key={p.id} onPress={() => setSelectedImage(i)}>
-                  <Image source={{ uri: p.image_url }} style={[styles.thumb, i === selectedImage && styles.thumbActive]} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {vendor.portfolios.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.thumbRow, { backgroundColor: bg }]}>
+                {vendor.portfolios.map((p: any, i: number) => (
+                  <TouchableOpacity key={p.id} onPress={() => setSelectedImage(i)}>
+                    <Image source={{ uri: p.image_url }} style={[styles.thumb, i === selectedImage && styles.thumbActive]} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        ) : (
+          <View style={[styles.coverFallback, { backgroundColor: card }]}>
+            <Text style={{ fontSize: 48 }}>🏢</Text>
           </View>
         )}
 
-        <View style={styles.body}>
-          <View style={styles.titleRow}>
-            <Text style={styles.name}>{vendor.business_name}</Text>
-            {vendor.verified && <Text>✅</Text>}
+        {/* Info */}
+        <View style={[styles.info, { backgroundColor: bg }]}>
+          <View style={styles.nameRow}>
+            <Text style={[styles.name, { color: text }]}>{vendor.business_name}</Text>
+            {vendor.verified && <Text style={styles.verifiedBadge}>✅</Text>}
           </View>
-          <Text style={styles.meta}>{vendor.category} • {vendor.city}</Text>
-          {vendor.address && <Text style={styles.address}>📍 {vendor.address}</Text>}
+          <Text style={[styles.meta, { color: subtext }]}>{vendor.category} • {vendor.city}</Text>
           <View style={styles.ratingRow}>
-            <Text style={styles.rating}>⭐ {vendor.avg_rating?.toFixed(1)}</Text>
-            <Text style={styles.ratingCount}>({vendor.total_reviews} ulasan)</Text>
+            <Text style={styles.rating}>⭐ {vendor.avg_rating?.toFixed(1) ?? '-'}</Text>
+            <Text style={[styles.ratingCount, { color: subtext }]}>({vendor.total_reviews} ulasan)</Text>
             {vendor.service_radius_km && (
-              <Text style={styles.radius}>📍 Radius {vendor.service_radius_km} km</Text>
+              <View style={[styles.radiusBadge, { backgroundColor: card }]}>
+                <Text style={[styles.radiusText, { color: subtext }]}>📍 {vendor.service_radius_km} km</Text>
+              </View>
             )}
           </View>
+        </View>
 
-          {vendor.description && (
+        {/* Tabs */}
+        <View style={[styles.tabBar, { backgroundColor: bg, borderBottomColor: cardBorder }]}>
+          {TABS.map((t, i) => (
+            <TouchableOpacity key={t} style={[styles.tabBtn, activeTab === i && styles.tabBtnActive]} onPress={() => setActiveTab(i)}>
+              <Text style={[styles.tabText, { color: subtext }, activeTab === i && styles.tabTextActive]}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={[styles.tabContent, { backgroundColor: bg }]}>
+          {/* Tentang */}
+          {activeTab === 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Tentang Kami</Text>
-              <Text style={styles.desc}>{vendor.description}</Text>
+              {vendor.description
+                ? <Text style={[styles.desc, { color: isDark ? '#D1D5DB' : '#374151' }]}>{vendor.description}</Text>
+                : <Text style={[styles.empty, { color: subtext }]}>Belum ada deskripsi</Text>}
+              <View style={styles.contactList}>
+                {vendor.address && <ContactRow icon="📍" label="Alamat" value={vendor.address} card={card} text={text} subtext={subtext} />}
+                {vendor.whatsapp && <ContactRow icon="📱" label="WhatsApp" value={vendor.whatsapp} card={card} text={text} subtext={subtext} />}
+                {vendor.service_radius_km && <ContactRow icon="🗺️" label="Jangkauan" value={`${vendor.service_radius_km} km`} card={card} text={text} subtext={subtext} />}
+              </View>
             </View>
           )}
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Paket Layanan</Text>
-            <View style={styles.chatHint}>
-              <Text style={styles.chatHintText}>💬 Konsultasi via chat sebelum memesan</Text>
-            </View>
-            {activeServices.map((s: any) => (
-              <TouchableOpacity key={s.id} style={styles.serviceCard} onPress={openChat}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.serviceName}>{s.name}</Text>
-                  {s.description && <Text style={styles.serviceDesc} numberOfLines={2}>{s.description}</Text>}
-                  <Text style={styles.servicePrice}>{formatRp(s.price)}</Text>
-                </View>
-                <Text style={styles.chatTag}>Chat →</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {vendor.reviews?.length > 0 && (
+          {/* Layanan */}
+          {activeTab === 1 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Ulasan Customer</Text>
-              {vendor.reviews.slice(0, 3).map((r: any) => (
-                <View key={r.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewName}>{r.users?.name}</Text>
-                    <Text style={styles.reviewRating}>{'⭐'.repeat(r.rating)}</Text>
+              <View style={[styles.chatHint, { backgroundColor: card }]}>
+                <Text style={styles.chatHintText}>💬 Konsultasi via chat sebelum memesan</Text>
+              </View>
+              {activeServices.length === 0 && <Text style={[styles.empty, { color: subtext }]}>Belum ada layanan aktif</Text>}
+              {activeServices.map((s: any) => (
+                <TouchableOpacity key={s.id} style={[styles.serviceCard, { backgroundColor: card, borderColor: cardBorder }]} onPress={openChat}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.serviceName, { color: text }]}>{s.name}</Text>
+                    {s.description && <Text style={[styles.serviceDesc, { color: subtext }]} numberOfLines={2}>{s.description}</Text>}
+                    {s.duration && <Text style={[styles.serviceDuration, { color: subtext }]}>⏱ {s.duration}</Text>}
+                    <Text style={styles.servicePrice}>{formatRp(s.price)}</Text>
                   </View>
-                  {r.comment && <Text style={styles.reviewComment}>{r.comment}</Text>}
+                  <Text style={styles.chatTag}>Chat →</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Ulasan */}
+          {activeTab === 2 && (
+            <View style={styles.section}>
+              <View style={[styles.ratingBig, { backgroundColor: card }]}>
+                <Text style={[styles.ratingBigNum, { color: text }]}>{vendor.avg_rating?.toFixed(1) ?? '-'}</Text>
+                <Text style={styles.stars}>{'⭐'.repeat(Math.round(vendor.avg_rating ?? 0))}</Text>
+                <Text style={[styles.ratingBigSub, { color: subtext }]}>Berdasarkan {vendor.total_reviews} ulasan</Text>
+              </View>
+              {vendor.reviews?.length === 0 && <Text style={[styles.empty, { color: subtext }]}>Belum ada ulasan</Text>}
+              {vendor.reviews?.map((r: any) => (
+                <View key={r.id} style={[styles.reviewCard, { backgroundColor: card }]}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={[styles.reviewName, { color: text }]}>{r.users?.name}</Text>
+                    <Text style={{ fontSize: 12 }}>{'⭐'.repeat(r.rating)}</Text>
+                  </View>
+                  {r.comment && <Text style={[styles.reviewComment, { color: isDark ? '#D1D5DB' : '#374151' }]}>{r.comment}</Text>}
                 </View>
               ))}
             </View>
           )}
         </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.shareBtn} onPress={shareVendor}>
-          <Text style={styles.shareBtnText}>🔗</Text>
+      {/* Footer */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 12, borderTopColor: cardBorder, backgroundColor: bg }]}>
+        <TouchableOpacity style={[styles.shareBtn, { borderColor: cardBorder }]} onPress={shareVendor}>
+          <Text style={{ fontSize: 18 }}>🔗</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.chatBtn} onPress={openChat}>
           <Text style={styles.chatBtnText}>💬 Konsultasi</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bookBtn} onPress={openChat}>
-          <Text style={styles.bookBtnText}>📅 Pesan via Chat</Text>
+        <TouchableOpacity style={styles.bookBtn} onPress={() => navigation.navigate('Booking', { vendorId })}>
+          <Text style={styles.bookBtnText}>📅 Pesan Sekarang</Text>
         </TouchableOpacity>
       </View>
     </View>
   )
 }
 
+function ContactRow({ icon, label, value, card, text, subtext }: { icon: string; label: string; value: string; card: string; text: string; subtext: string }) {
+  return (
+    <View style={[styles.contactRow, { backgroundColor: card }]}>
+      <Text style={styles.contactIcon}>{icon}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.contactLabel, { color: subtext }]}>{label}</Text>
+        <Text style={[styles.contactValue, { color: text }]}>{value}</Text>
+      </View>
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  root: { flex: 1 },
+  scroll: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  cover: { width: '100%', height: 240 },
+  cover: { width: '100%', height: 260 },
+  coverFallback: { width: '100%', height: 200, alignItems: 'center', justifyContent: 'center' },
   thumbRow: { padding: 8, gap: 8 },
-  thumb: { width: 60, height: 60, borderRadius: 8, opacity: 0.6 },
+  thumb: { width: 60, height: 60, borderRadius: 8, opacity: 0.5 },
   thumbActive: { opacity: 1, borderWidth: 2, borderColor: '#3B5BDB' },
-  body: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#1F2937', flex: 1 },
-  meta: { fontSize: 14, color: '#6B7280', marginTop: 4 },
-  address: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, marginBottom: 16 },
-  rating: { fontSize: 15, color: '#F59E0B', fontWeight: '600' },
-  ratingCount: { fontSize: 13, color: '#9CA3AF' },
-  radius: { fontSize: 12, color: '#6B7280', marginLeft: 8, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  chatHint: { backgroundColor: '#EEF2FF', borderRadius: 8, padding: 10, marginBottom: 10 },
-  chatHintText: { fontSize: 12, color: '#3B5BDB', fontWeight: '500' },
-  chatTag: { fontSize: 13, color: '#3B5BDB', fontWeight: '600' },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1F2937', marginBottom: 10 },
-  desc: { fontSize: 14, color: '#4B5563', lineHeight: 22 },
-  serviceCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, marginBottom: 8 },
-  serviceName: { fontSize: 15, fontWeight: '600', color: '#1F2937' },
-  serviceDesc: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  servicePrice: { fontSize: 15, color: '#3B5BDB', fontWeight: 'bold', marginTop: 4 },
-  arrow: { fontSize: 22, color: '#9CA3AF' },
-  reviewCard: { padding: 12, backgroundColor: '#F9FAFB', borderRadius: 12, marginBottom: 8 },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  reviewName: { fontSize: 13, fontWeight: '600', color: '#374151' },
-  reviewRating: { fontSize: 12 },
-  reviewComment: { fontSize: 13, color: '#4B5563' },
-  footer: { flexDirection: 'row', padding: 16, gap: 10, borderTopWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#fff' },
-  shareBtn: { width: 48, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, alignItems: 'center', justifyContent: 'center' },
-  shareBtnText: { fontSize: 20 },
+  info: { padding: 16 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  name: { fontFamily: 'Poppins_700Bold', fontSize: 22, flex: 1 },
+  verifiedBadge: { fontSize: 18 },
+  meta: { fontFamily: 'Poppins_400Regular', fontSize: 14, marginTop: 4 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  rating: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: '#F59E0B' },
+  ratingCount: { fontFamily: 'Poppins_400Regular', fontSize: 13 },
+  radiusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  radiusText: { fontFamily: 'Poppins_400Regular', fontSize: 11 },
+  tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
+  tabBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+  tabBtnActive: { borderBottomWidth: 2, borderColor: '#3B5BDB' },
+  tabText: { fontFamily: 'Poppins_500Medium', fontSize: 13 },
+  tabTextActive: { fontFamily: 'Poppins_600SemiBold', color: '#3B5BDB' },
+  tabContent: {},
+  section: { padding: 16 },
+  desc: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22 },
+  empty: { fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingVertical: 20, fontSize: 14 },
+  contactList: { marginTop: 16, gap: 12 },
+  contactRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderRadius: 10, padding: 12 },
+  contactIcon: { fontSize: 18, marginTop: 2 },
+  contactLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11 },
+  contactValue: { fontFamily: 'Poppins_500Medium', fontSize: 14, marginTop: 2 },
+  chatHint: { borderRadius: 10, padding: 10, marginBottom: 12 },
+  chatHintText: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: '#3B5BDB' },
+  serviceCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderRadius: 12, marginBottom: 10 },
+  serviceName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
+  serviceDesc: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 2 },
+  serviceDuration: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 2 },
+  servicePrice: { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#3B5BDB', marginTop: 6 },
+  chatTag: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#3B5BDB' },
+  ratingBig: { alignItems: 'center', paddingVertical: 24, borderRadius: 14, marginBottom: 16 },
+  ratingBigNum: { fontFamily: 'Poppins_700Bold', fontSize: 48 },
+  stars: { fontSize: 20, marginTop: 4 },
+  ratingBigSub: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 8 },
+  reviewCard: { padding: 14, borderRadius: 12, marginBottom: 10 },
+  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  reviewName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  reviewComment: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 20 },
+  footer: { flexDirection: 'row', padding: 16, paddingTop: 12, gap: 10, borderTopWidth: 1 },
+  shareBtn: { width: 48, borderWidth: 1.5, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   chatBtn: { flex: 1, borderWidth: 1.5, borderColor: '#3B5BDB', borderRadius: 12, padding: 14, alignItems: 'center' },
-  chatBtnText: { color: '#3B5BDB', fontWeight: '600', fontSize: 14 },
+  chatBtnText: { fontFamily: 'Poppins_600SemiBold', color: '#3B5BDB', fontSize: 14 },
   bookBtn: { flex: 2, backgroundColor: '#3B5BDB', borderRadius: 12, padding: 14, alignItems: 'center' },
-  bookBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  bookBtnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 14 },
 })
