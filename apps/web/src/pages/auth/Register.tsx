@@ -53,6 +53,7 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!ktp) return setError('Foto KTP wajib diupload')
+    if (!nib) return setError('Dokumen NIB / AKTA Perusahaan wajib diupload')
     if (!agreed) return setError('Anda harus menyetujui kebijakan pengumpulan data')
     setLoading(true)
     setError('')
@@ -184,8 +185,8 @@ export default function Register() {
               </div>
 
               <div>
-                <label className={labelClass}>NIB / AKTA Perusahaan <span className="text-white/30 normal-case">(opsional, untuk badan usaha)</span></label>
-                <FileUpload id="nib-file" label="Klik untuk upload NIB atau AKTA" value={nib} onChange={setNib} />
+                <label className={labelClass}>NIB / AKTA Perusahaan <span className="text-red-400 normal-case">* wajib</span></label>
+                <FileUpload id="nib-file" label="Klik untuk upload NIB atau AKTA" required value={nib} onChange={setNib} />
               </div>
 
               <div>
@@ -201,7 +202,7 @@ export default function Register() {
             </div>
 
             {/* Consent checkbox */}
-            <label className="flex items-start gap-3 cursor-pointer group">
+            <label className={`flex items-start gap-3 cursor-pointer group rounded-xl p-3 border transition-colors ${agreed ? 'border-primary/50 bg-primary/10' : 'border-red-400/40 bg-red-500/5'}`}>
               <input
                 type="checkbox"
                 checked={agreed}
@@ -209,6 +210,7 @@ export default function Register() {
                 className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0"
               />
               <span className="text-white/50 text-xs leading-relaxed group-hover:text-white/70 transition-colors">
+                <span className="text-red-400 font-bold">* </span>
                 Saya menyetujui pengumpulan dan pemrosesan data pribadi serta dokumen identitas saya oleh VendorApp sesuai{' '}
                 <span className="text-primary underline">Kebijakan Privasi</span> dan{' '}
                 <span className="text-primary underline">UU Perlindungan Data Pribadi (UU PDP)</span>.
