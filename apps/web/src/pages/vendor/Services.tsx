@@ -32,7 +32,7 @@ export default function Services() {
   useEffect(() => { reload() }, [])
 
   function openCreate() { setForm(empty); setEditId(null); setShowForm(true) }
-  function openEdit(s: Service) { setForm({ name: s.name, description: s.description, price: s.price, dp_percent: s.dp_percent, duration: s.duration, is_active: s.is_active }); setEditId(s.id); setShowForm(true) }
+  function openEdit(s: Service) { setForm({ name: s.name, description: s.description, price: s.price, dp_percent: s.dp_percent, duration: s.duration, pricing_type: s.pricing_type || 'paket', unit_label: s.unit_label || '', is_active: s.is_active }); setEditId(s.id); setShowForm(true) }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
