@@ -2,9 +2,21 @@ import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { formatRp } from '../../utils/currency'
 
-interface Service { id: string; name: string; description: string; price: number; dp_percent: number; duration: string; is_active: boolean }
+const PRICING_TYPES = [
+  { value: 'paket', label: 'Paket (flat)' },
+  { value: 'per_jam', label: 'Per Jam' },
+  { value: 'setengah_hari', label: 'Setengah Hari (4–6 jam)' },
+  { value: 'sehari', label: 'Satu Hari (8–12 jam)' },
+  { value: 'custom', label: 'Custom / Negosiasi' },
+]
 
-const empty = { name: '', description: '', price: 0, dp_percent: 30, duration: '', is_active: true }
+const PRICING_LABEL: Record<string, string> = {
+  paket: 'Paket', per_jam: '/jam', setengah_hari: '/½ hari', sehari: '/hari', custom: 'Custom',
+}
+
+interface Service { id: string; name: string; description: string; price: number; dp_percent: number; duration: string; pricing_type: string; unit_label: string; is_active: boolean }
+
+const empty = { name: '', description: '', price: 0, dp_percent: 30, duration: '', pricing_type: 'paket', unit_label: '', is_active: true }
 
 export default function Services() {
   const [services, setServices] = useState<Service[]>([])
@@ -62,7 +74,10 @@ export default function Services() {
               </div>
               {s.description && <p className="text-sm text-gray-500 mt-1 line-clamp-2">{s.description}</p>}
             </div>
-            <div className="text-xl font-bold text-primary">{formatRp(s.price)}</div>
+            <div className="text-xl font-bold text-primary">
+              {formatRp(s.price)}
+              <span className="text-sm font-normal text-gray-400 ml-1">{s.unit_label || PRICING_LABEL[s.pricing_type] || ''}</span>
+            </div>
             <div className="text-xs text-gray-400 flex gap-3">
               <span>DP {s.dp_percent}%</span>
               {s.duration && <span>⏱ {s.duration}</span>}
@@ -95,14 +110,24 @@ export default function Services() {
             <Field label="Deskripsi">
               <textarea rows={3} className={input} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi layanan..." />
             </Field>
-            <Field label="Harga (Rp)">
-              <input type="number" required min={0} className={input} value={form.price || ''} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) })} />
+            <Field label="Jenis Harga">
+              <select className={input + ' bg-white'} value={form.pricing_type} onChange={(e) => setForm({ ...form, pricing_type: e.target.value })}>
+                {PRICING_TYPES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Harga (Rp)">
+                <input type="number" required min={0} className={input} value={form.price || ''} onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) })} placeholder="0" />
+              </Field>
+              <Field label="Label Harga (opsional)">
+                <input className={input} value={form.unit_label} onChange={(e) => setForm({ ...form, unit_label: e.target.value })} placeholder="cth: /unit, /mobil" />
+              </Field>
+            </div>
             <Field label={`DP Minimal: ${form.dp_percent}%`}>
               <input type="range" min={20} max={50} className="w-full" value={form.dp_percent} onChange={(e) => setForm({ ...form, dp_percent: parseInt(e.target.value) })} />
             </Field>
-            <Field label="Durasi Layanan">
-              <input className={input} value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="cth: 8 jam / 1 hari" />
+            <Field label="Durasi / Keterangan Waktu">
+              <input className={input} value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="cth: 8 jam, min. 4 jam, maks. 3 hari" />
             </Field>
 
             <div className="flex gap-3 pt-2">

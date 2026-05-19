@@ -95,10 +95,27 @@ export default function AdminVerification() {
               ) : null)}
             </div>
 
+            {detail.npwp && (
+              <div className="flex gap-2 text-sm">
+                <span className="text-gray-400 w-32 shrink-0">NPWP:</span>
+                <span className="font-medium font-mono">{detail.npwp}</span>
+              </div>
+            )}
+
             {detail.ktp_signed_url && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-2">Foto KTP:</p>
+              <div className="mb-2">
+                <p className="text-sm text-gray-500 mb-2 font-medium">Foto KTP:</p>
                 <img src={detail.ktp_signed_url} alt="KTP" className="max-w-full rounded-lg border" />
+              </div>
+            )}
+
+            {detail.nib_signed_url && (
+              <div className="mb-2">
+                <p className="text-sm text-gray-500 mb-2 font-medium">NIB / AKTA Perusahaan:</p>
+                {detail.nib_signed_url.match(/\.(pdf)$/i)
+                  ? <a href={detail.nib_signed_url} target="_blank" rel="noreferrer" className="text-primary text-sm underline">Buka dokumen NIB (PDF)</a>
+                  : <img src={detail.nib_signed_url} alt="NIB" className="max-w-full rounded-lg border" />
+                }
               </div>
             )}
 
