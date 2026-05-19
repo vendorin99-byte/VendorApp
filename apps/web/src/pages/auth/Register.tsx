@@ -24,9 +24,8 @@ const FAQ = [
 ]
 
 function FileUpload({ id, label, required, value, onChange }: { id: string; label: string; required?: boolean; value: File | null; onChange: (f: File | null) => void }) {
-  const inputClass = 'w-full bg-dark border border-dark-border text-white placeholder-white/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors'
   return (
-    <div className="border border-dashed border-dark-border rounded-xl px-4 py-4 text-center">
+    <div className="border border-dashed border-white/20 rounded-xl px-4 py-4 text-center">
       <input type="file" accept="image/*,.pdf" required={required} onChange={(e) => onChange(e.target.files?.[0] || null)} className="hidden" id={id} />
       <label htmlFor={id} className="cursor-pointer">
         <p className="text-white/40 text-sm">{value ? <span className="text-green-400">{value.name}</span> : `📎 ${label}`}</p>
@@ -71,7 +70,7 @@ export default function Register() {
     }
   }
 
-  const inputClass = 'w-full bg-dark border border-dark-border text-white placeholder-white/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors'
+  const inputClass = 'w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:bg-white/15 transition-colors [color-scheme:dark]'
   const labelClass = 'block text-white/60 text-xs font-medium mb-1.5 uppercase tracking-wider'
 
   return (
@@ -176,7 +175,7 @@ export default function Register() {
             </div>
 
             {/* Documents section */}
-            <div className="border border-white/10 rounded-2xl p-4 space-y-4 bg-white/5">
+            <div className="border border-white/20 rounded-2xl p-4 space-y-4 bg-white/5">
               <p className="text-white/60 text-xs uppercase tracking-wider font-medium">Dokumen Identitas</p>
 
               <div>
