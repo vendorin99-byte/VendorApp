@@ -4,22 +4,50 @@ import { useAuthStore } from '../../store/authStore'
 
 const CATEGORIES = ['Wedding Organizer', 'Fotografer', 'Event Organizer', 'Katering', 'Dekorasi', 'Sewa Mobil', 'Musik', 'Videotron', 'Lighting', 'Venue']
 
+const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+
+const DEFAULT_HOURS: Record<string, { open: string; close: string; is_open: boolean }> = Object.fromEntries(
+  DAYS.map((d) => [d, { open: '08:00', close: '17:00', is_open: true }])
+)
+
+function parseHours(raw: any): Record<string, { open: string; close: string; is_open: boolean }> {
+  if (!raw) return { ...DEFAULT_HOURS }
+  return Object.fromEntries(
+    DAYS.map((d) => {
+      const val = raw[d]
+      if (!val || val === 'Tutup') return [d, { open: '08:00', close: '17:00', is_open: false }]
+      const [open, close] = val.split('-')
+      return [d, { open: open || '08:00', close: close || '17:00', is_open: true }]
+    })
+  )
+}
+
+function serializeHours(hours: Record<string, { open: string; close: string; is_open: boolean }>) {
+  return Object.fromEntries(
+    DAYS.map((d) => [d, hours[d].is_open ? `${hours[d].open}-${hours[d].close}` : 'Tutup'])
+  )
+}
+
 export default function Settings() {
   const { logout } = useAuthStore()
   const [profile, setProfile] = useState<any>(null)
+  const [hours, setHours] = useState<Record<string, { open: string; close: string; is_open: boolean }>>(DEFAULT_HOURS)
   const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    api.get('/vendor/profile').then((r) => setProfile(r.data)).catch(() => setLoadError(true))
+    api.get('/vendor/profile').then((r) => {
+      setProfile(r.data)
+      setHours(parseHours(r.data.operating_hours))
+    }).catch(() => setLoadError(true))
   }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     try {
-      await api.put('/vendor/profile', profile)
+      await api.put('/vendor/profile', { ...profile, operating_hours: serializeHours(hours) })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } finally {
@@ -83,6 +111,43 @@ export default function Settings() {
               <p className="text-xs text-gray-500">Vendor Anda akan muncul di peta customer dalam radius ini</p>
             </div>
           </Field>
+        </section>
+
+        <section className="bg-white rounded-xl border p-5 space-y-4">
+          <h2 className="font-semibold text-gray-800">Jam Operasional</h2>
+          <div className="space-y-3">
+            {DAYS.map((day) => (
+              <div key={day} className="flex items-center gap-3">
+                <div className="w-16 text-sm text-gray-600 font-medium">{day}</div>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={hours[day].is_open}
+                    onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], is_open: e.target.checked } })}
+                    className="accent-primary w-4 h-4"
+                  />
+                  <span className="text-sm text-gray-500">{hours[day].is_open ? 'Buka' : 'Tutup'}</span>
+                </label>
+                {hours[day].is_open && (
+                  <>
+                    <input
+                      type="time"
+                      value={hours[day].open}
+                      onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.value } })}
+                      className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <span className="text-gray-400 text-sm">—</span>
+                    <input
+                      type="time"
+                      value={hours[day].close}
+                      onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], close: e.target.value } })}
+                      className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="bg-white rounded-xl border p-5 space-y-4">
