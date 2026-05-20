@@ -3,11 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar 
 import PasswordInput from '../../components/PasswordInput'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTheme } from '../../hooks/useTheme'
 import api from '../../services/api'
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
+  const { isDark, bg, text, subtext, statusBar, statusBarBg, headerBg, headerBorder } = useTheme()
   const [oldPwd, setOldPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
   const [confirmPwd, setConfirmPwd] = useState('')
@@ -17,7 +19,6 @@ export default function ChangePasswordScreen() {
     if (!oldPwd || !newPwd || !confirmPwd) return Alert.alert('Error', 'Semua field wajib diisi')
     if (newPwd !== confirmPwd) return Alert.alert('Error', 'Konfirmasi password tidak cocok')
     if (newPwd.length < 8) return Alert.alert('Error', 'Password baru minimal 8 karakter')
-
     setLoading(true)
     try {
       await api.post('/customer/profile/change-password', { old_password: oldPwd, new_password: newPwd })
@@ -30,24 +31,24 @@ export default function ChangePasswordScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+    <ScrollView style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={statusBar} backgroundColor={statusBarBg} />
+      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: headerBg, borderBottomColor: headerBorder }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>← Kembali</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Ganti Password</Text>
+        <Text style={[styles.title, { color: text }]}>Ganti Password</Text>
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.label}>Password Lama</Text>
-        <PasswordInput value={oldPwd} onChangeText={setOldPwd} placeholder="Masukkan password lama" />
+        <Text style={[styles.label, { color: subtext }]}>Password Lama</Text>
+        <PasswordInput value={oldPwd} onChangeText={setOldPwd} placeholder="Masukkan password lama" dark={isDark} />
 
-        <Text style={styles.label}>Password Baru</Text>
-        <PasswordInput value={newPwd} onChangeText={setNewPwd} placeholder="Minimal 8 karakter" />
+        <Text style={[styles.label, { color: subtext }]}>Password Baru</Text>
+        <PasswordInput value={newPwd} onChangeText={setNewPwd} placeholder="Minimal 8 karakter" dark={isDark} />
 
-        <Text style={styles.label}>Konfirmasi Password Baru</Text>
-        <PasswordInput value={confirmPwd} onChangeText={setConfirmPwd} placeholder="Ulangi password baru" />
+        <Text style={[styles.label, { color: subtext }]}>Konfirmasi Password Baru</Text>
+        <PasswordInput value={confirmPwd} onChangeText={setConfirmPwd} placeholder="Ulangi password baru" dark={isDark} />
 
         <TouchableOpacity style={styles.btn} onPress={handleChange} disabled={loading}>
           <Text style={styles.btnText}>{loading ? 'Menyimpan...' : 'Ganti Password'}</Text>
@@ -58,15 +59,12 @@ export default function ChangePasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderColor: '#E5E7EB' },
-  backBtn: { marginBottom: 8 },
-  backText: { color: '#3B5BDB', fontSize: 14 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1 },
+  backText: { color: '#3B5BDB', fontFamily: 'Poppins_500Medium', fontSize: 14, marginBottom: 8 },
+  title: { fontFamily: 'Poppins_700Bold', fontSize: 20 },
   form: { padding: 16, gap: 4 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginTop: 14 },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 14, fontSize: 15, marginTop: 4 },
-  // PasswordInput sudah handle border sendiri, style diatas tidak dipakai lagi
+  label: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, marginTop: 14 },
   btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 28 },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 16 },
 })
