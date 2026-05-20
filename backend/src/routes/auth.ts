@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import crypto from 'crypto'
 import { supabase } from '../lib/supabase'
+import { requireAuth } from '../middlewares/auth'
 import {
   sendWelcomeCustomerEmail,
   sendVendorWelcomeEmail,
@@ -227,6 +228,14 @@ router.post('/reset-password', async (req, res) => {
   await supabase.from('password_resets').update({ used: true }).eq('user_id', user.id)
 
   res.json({ message: 'Password berhasil diubah' })
+})
+
+// ── Simpan Expo Push Token ────────────────────────────────────────────────────
+router.post('/push-token', requireAuth, async (req, res) => {
+  const { token } = req.body
+  if (!token) return res.status(400).json({ error: 'Token required' })
+  await supabase.from('users').update({ expo_push_token: token }).eq('id', req.user!.id)
+  res.json({ success: true })
 })
 
 // ── Create admin account (one-time setup, hanya dari localhost) ───────────────
