@@ -36,17 +36,14 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false)
 
   async function fetchVendors() {
-    try {
-      const params: Record<string, string> = {}
-      if (search) params.search = search
-      if (category !== 'Semua') params.category = category
-      const [vendorRes, adsRes] = await Promise.all([
-        api.get('/vendors', { params }),
-        api.get('/ads/feed?limit=5'),
-      ])
-      setVendors(vendorRes.data.data || [])
-      setFeedAds(adsRes.data || [])
-    } catch {}
+    const params: Record<string, string> = {}
+    if (search) params.search = search
+    if (category !== 'Semua') params.category = category
+
+    const vendorRes = await api.get('/vendors', { params }).catch(() => null)
+    setVendors(vendorRes?.data?.data || [])
+
+    api.get('/ads/feed?limit=5').then(r => setFeedAds(r.data || [])).catch(() => {})
   }
 
   useEffect(() => { fetchVendors() }, [search, category])
