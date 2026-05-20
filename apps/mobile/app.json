@@ -19,7 +19,9 @@
       "package": "com.vendorin.app",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "ios": {
@@ -30,7 +32,14 @@
       "expo-secure-store",
       "expo-location",
       "expo-notifications",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Izinkan VendorIn menyimpan QR Code ke galeri Anda",
+          "savePhotosPermission": "Izinkan VendorIn menyimpan QR Code ke galeri Anda"
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/6d185c62-038d-49a2-9e24-9c9a81fdcb38",

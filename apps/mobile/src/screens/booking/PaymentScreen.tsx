@@ -4,6 +4,8 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import QRCode from 'react-native-qrcode-svg'
+import ViewShot from 'react-native-view-shot'
+import * as MediaLibrary from 'expo-media-library'
 import { RootStackParamList } from '../../navigation'
 import { useTheme } from '../../hooks/useTheme'
 import { formatRp } from '../../utils/currency'
@@ -22,9 +24,11 @@ export default function PaymentScreen() {
   const [qrString, setQrString] = useState<string | null>(null)
   const [loadingQr, setLoadingQr] = useState(false)
   const [paid, setPaid] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(900) // 15 menit
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const viewShotRef = useRef<ViewShot>(null)
 
   const isQris = ['dp', 'lunas', 'qris'].includes(method)
 
@@ -52,6 +56,24 @@ export default function PaymentScreen() {
       Alert.alert('Gagal', e.response?.data?.error || 'Gagal membuat QRIS')
     } finally {
       setLoadingQr(false)
+    }
+  }
+
+  async function downloadQr() {
+    setSaving(true)
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk menyimpan QR code')
+        return
+      }
+      const uri = await viewShotRef.current!.capture!()
+      await MediaLibrary.saveToLibraryAsync(uri)
+      Alert.alert('Tersimpan', 'QR Code berhasil disimpan ke galeri')
+    } catch {
+      Alert.alert('Gagal', 'Tidak dapat menyimpan QR Code')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -114,9 +136,13 @@ export default function PaymentScreen() {
             {qrString && !loadingQr && (
               <>
                 <View style={styles.qrCenter}>
-                  <View style={styles.qrWrapper}>
-                    <QRCode value={qrString} size={200} />
-                  </View>
+                  <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+                    <View style={styles.qrWrapper}>
+                      <Text style={styles.qrBrand}>VendorIn</Text>
+                      <QRCode value={qrString} size={200} />
+                      <Text style={styles.qrCaption}>Scan untuk bayar · QRIS</Text>
+                    </View>
+                  </ViewShot>
                   {secondsLeft > 0 ? (
                     <View style={styles.timerRow}>
                       <Text style={styles.timerDot}>⏱</Text>
@@ -127,6 +153,11 @@ export default function PaymentScreen() {
                       <Text style={styles.refreshText}>🔄 QR Expired — Buat Ulang</Text>
                     </TouchableOpacity>
                   )}
+                  <TouchableOpacity style={styles.downloadBtn} onPress={downloadQr} disabled={saving}>
+                    {saving
+                      ? <ActivityIndicator size="small" color="#3B5BDB" />
+                      : <Text style={styles.downloadText}>⬇ Simpan QR ke Galeri</Text>}
+                  </TouchableOpacity>
                 </View>
                 <Text style={[styles.qrNote, { color: subtext }]}>
                   Scan QR di atas menggunakan GoPay, OVO, Dana, BCA Mobile, BRImo, atau m-banking lainnya
@@ -192,7 +223,11 @@ const styles = StyleSheet.create({
   payCard: { borderRadius: 16, padding: 18, borderWidth: 1 },
   cardTitle: { fontFamily: 'Poppins_700Bold', fontSize: 15, marginBottom: 16 },
   qrCenter: { alignItems: 'center', marginBottom: 16 },
-  qrWrapper: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12 },
+  qrWrapper: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, alignItems: 'center' },
+  qrBrand: { fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#3B5BDB', marginBottom: 10 },
+  qrCaption: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: '#9CA3AF', marginTop: 10 },
+  downloadBtn: { marginTop: 10, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, borderWidth: 1, borderColor: '#3B5BDB', minWidth: 180, alignItems: 'center' },
+  downloadText: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#3B5BDB' },
   timerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   timerDot: { fontSize: 14 },
   timerText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: '#3B5BDB' },
