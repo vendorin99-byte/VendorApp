@@ -15,6 +15,7 @@ const bookingSchema = z.object({
   event_time: z.string().optional(),
   notes: z.string().optional(),
   payment_method: z.enum(['dp', 'lunas', 'cash', 'qris', 'transfer', 'tempo']).default('dp'),
+  agreed_at: z.string().datetime().optional(),
 })
 
 // ── Buat Booking ─────────────────────────────────────────────────────────────
@@ -22,7 +23,9 @@ router.post('/', requireAuth, requireRole('customer'), async (req, res) => {
   const parsed = bookingSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
 
-  const { vendor_id, service_id, event_date, event_time, notes, payment_method } = parsed.data
+  const { vendor_id, service_id, event_date, event_time, notes, payment_method, agreed_at } = parsed.data
+
+  if (!agreed_at) return res.status(400).json({ error: 'Persetujuan perjanjian wajib diisi' })
 
   const { data: service } = await supabase.from('services').select('*').eq('id', service_id).single()
   if (!service) return res.status(404).json({ error: 'Service not found' })
@@ -48,6 +51,7 @@ router.post('/', requireAuth, requireRole('customer'), async (req, res) => {
     vendor_received: vendorReceived,
     payment_method,
     status: payment_method === 'tempo' ? 'confirmed' : 'pending_dp',
+    agreed_at,
   }).select().single()
 
   if (error) return res.status(500).json({ error: error.message })
