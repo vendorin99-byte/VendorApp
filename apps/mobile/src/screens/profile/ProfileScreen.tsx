@@ -23,6 +23,7 @@ export default function ProfileScreen() {
     { icon: '✏️', label: 'Edit Profil', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'EditProfile' })) },
     { icon: '🔒', label: 'Ganti Password', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'ChangePassword' })) },
     { icon: '🤝', label: 'Program Affiliate', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'Affiliate' })) },
+    { icon: '🔔', label: 'Notifikasi', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'Notifications' })) },
     { icon: '📋', label: 'Riwayat Pesanan', onPress: goToPesanan },
     { icon: '⭐', label: 'Ulasan Saya', onPress: goToPesanan },
     { icon: '📄', label: 'Syarat & Ketentuan', onPress: () => Alert.alert('Syarat & Ketentuan', 'Dengan menggunakan VendorApp, Anda menyetujui bahwa:\n\n• Data pribadi diproses sesuai UU PDP\n• Transaksi dijamin escrow hingga selesai\n• Pembatalan dikenakan biaya sesuai kebijakan vendor\n• Vendor bertanggung jawab atas layanan yang diberikan\n\nHubungi support@vendorin.id untuk pertanyaan lebih lanjut.') },

@@ -5,6 +5,7 @@ import { requireRole } from '../../middlewares/roleCheck'
 import { supabase } from '../../lib/supabase'
 import { creditWallet } from '../../services/wallet'
 import { coreApi } from '../../lib/midtrans'
+import { sendPushNotification } from '../../services/pushNotification'
 
 const router = Router()
 
@@ -238,6 +239,38 @@ router.post('/:id/pay-remaining', requireAuth, requireRole('customer'), async (r
   await supabase.from('bookings').update({ status: 'pending_remaining' }).eq('id', booking.id)
 
   res.json({ booking_id: booking.id, amount: remaining, payment_method: booking.payment_method })
+})
+
+// ── Batalkan pesanan (customer) ───────────────────────────────────────────────
+router.post('/:id/cancel', requireAuth, requireRole('customer'), async (req, res) => {
+  const { reason } = req.body
+  const { data: booking } = await supabase.from('bookings')
+    .select('*, vendors(user_id), services(name)')
+    .eq('id', req.params.id)
+    .eq('customer_id', req.user!.id)
+    .single()
+
+  if (!booking) return res.status(404).json({ error: 'Booking not found' })
+  if (!['pending_dp', 'dp_paid', 'confirmed'].includes(booking.status)) {
+    return res.status(400).json({ error: 'Pesanan tidak dapat dibatalkan pada status ini' })
+  }
+
+  await supabase.from('bookings').update({
+    status: 'cancelled',
+    cancel_reason: reason || 'Dibatalkan oleh customer',
+  }).eq('id', booking.id)
+
+  const vendorUserId = (booking.vendors as any)?.user_id
+  if (vendorUserId) {
+    await sendPushNotification(
+      vendorUserId,
+      '❌ Pesanan Dibatalkan',
+      `Customer membatalkan pesanan "${(booking.services as any)?.name}" #${booking.id.slice(0, 8)}`,
+      { type: 'order_cancelled', bookingId: booking.id }
+    )
+  }
+
+  res.json({ success: true })
 })
 
 // ── List pesanan saya ────────────────────────────────────────────────────────

@@ -94,6 +94,13 @@ router.post('/affiliate/withdraw', async (req, res) => {
   res.json({ message: 'Pencairan berhasil diajukan, akan diproses dalam 1-3 hari kerja' })
 })
 
+router.post('/push-token', async (req, res) => {
+  const { token } = req.body
+  if (!token) return res.status(400).json({ error: 'Token required' })
+  await supabase.from('users').update({ expo_push_token: token }).eq('id', req.user!.id)
+  res.json({ success: true })
+})
+
 router.get('/affiliate', async (req, res) => {
   const { data: user } = await supabase
     .from('users')

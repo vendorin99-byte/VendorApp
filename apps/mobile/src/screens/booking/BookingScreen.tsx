@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, StatusBar } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, StatusBar, Modal, FlatList } from 'react-native'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -30,6 +30,10 @@ export default function BookingScreen() {
   const [selected, setSelected] = useState<any>(null)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [pickerDay, setPickerDay] = useState(1)
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth() + 1)
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear())
   const [notes, setNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<string>('dp')
   const [agreed, setAgreed] = useState(false)
@@ -112,7 +116,15 @@ export default function BookingScreen() {
 
         {/* Tanggal & Jam */}
         <Text style={[styles.sectionTitle, { color: subtext }]}>Tanggal Event</Text>
-        <TextInput style={inputStyle} placeholder="YYYY-MM-DD (cth: 2026-08-17)" placeholderTextColor={placeholder} value={date} onChangeText={t => { setDate(t); setAgreed(false) }} />
+        <TouchableOpacity
+          style={[inputStyle, styles.dateBtn]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 15, color: date ? text : placeholder }}>
+            {date || 'Pilih tanggal event...'}
+          </Text>
+          <Text style={{ fontSize: 18 }}>📅</Text>
+        </TouchableOpacity>
 
         <Text style={[styles.sectionTitle, { color: subtext }]}>Jam Event (opsional)</Text>
         <TextInput style={inputStyle} placeholder="HH:MM (cth: 09:00)" placeholderTextColor={placeholder} value={time} onChangeText={setTime} />
@@ -222,6 +234,79 @@ export default function BookingScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Date Picker Modal */}
+      <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+        <View style={styles.pickerOverlay}>
+          <View style={[styles.pickerSheet, { backgroundColor: card }]}>
+            <Text style={[styles.pickerTitle, { color: text }]}>Pilih Tanggal</Text>
+            <View style={styles.pickerRow}>
+              <View style={styles.pickerCol}>
+                <Text style={[styles.pickerLabel, { color: subtext }]}>Hari</Text>
+                <FlatList
+                  data={Array.from({ length: 31 }, (_, i) => i + 1)}
+                  keyExtractor={(v) => String(v)}
+                  style={styles.pickerList}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.pickerItem, pickerDay === item && styles.pickerItemActive]}
+                      onPress={() => setPickerDay(item)}
+                    >
+                      <Text style={[styles.pickerItemText, { color: pickerDay === item ? '#fff' : text }]}>{String(item).padStart(2, '0')}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+              <View style={styles.pickerCol}>
+                <Text style={[styles.pickerLabel, { color: subtext }]}>Bulan</Text>
+                <FlatList
+                  data={['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']}
+                  keyExtractor={(_, i) => String(i)}
+                  style={styles.pickerList}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item, index }) => (
+                    <TouchableOpacity
+                      style={[styles.pickerItem, pickerMonth === index + 1 && styles.pickerItemActive]}
+                      onPress={() => setPickerMonth(index + 1)}
+                    >
+                      <Text style={[styles.pickerItemText, { color: pickerMonth === index + 1 ? '#fff' : text }]}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+              <View style={styles.pickerCol}>
+                <Text style={[styles.pickerLabel, { color: subtext }]}>Tahun</Text>
+                <FlatList
+                  data={Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i)}
+                  keyExtractor={(v) => String(v)}
+                  style={styles.pickerList}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.pickerItem, pickerYear === item && styles.pickerItemActive]}
+                      onPress={() => setPickerYear(item)}
+                    >
+                      <Text style={[styles.pickerItemText, { color: pickerYear === item ? '#fff' : text }]}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            </View>
+            <TouchableOpacity style={styles.pickerConfirm} onPress={() => {
+              const d = `${pickerYear}-${String(pickerMonth).padStart(2,'0')}-${String(pickerDay).padStart(2,'0')}`
+              setDate(d)
+              setAgreed(false)
+              setShowDatePicker(false)
+            }}>
+              <Text style={styles.pickerConfirmText}>Pilih Tanggal Ini</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.pickerCancel} onPress={() => setShowDatePicker(false)}>
+              <Text style={[styles.pickerCancelText, { color: subtext }]}>Batal</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -278,4 +363,19 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: '#3B5BDB', borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 20 },
   btnDisabled: { backgroundColor: '#2A3A6A' },
   btnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 16 },
+  dateBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  pickerSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 },
+  pickerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 16, textAlign: 'center', marginBottom: 16 },
+  pickerRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  pickerCol: { flex: 1 },
+  pickerLabel: { fontFamily: 'Poppins_500Medium', fontSize: 12, textAlign: 'center', marginBottom: 8 },
+  pickerList: { height: 180 },
+  pickerItem: { paddingVertical: 10, paddingHorizontal: 6, borderRadius: 8, marginBottom: 4, alignItems: 'center' },
+  pickerItemActive: { backgroundColor: '#3B5BDB' },
+  pickerItemText: { fontFamily: 'Poppins_500Medium', fontSize: 14 },
+  pickerConfirm: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 8 },
+  pickerConfirmText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 15 },
+  pickerCancel: { alignItems: 'center', padding: 10 },
+  pickerCancelText: { fontFamily: 'Poppins_400Regular', fontSize: 14 },
 })

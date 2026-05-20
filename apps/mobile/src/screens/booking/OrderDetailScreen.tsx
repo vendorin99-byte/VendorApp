@@ -42,17 +42,39 @@ export default function OrderDetailScreen() {
   useEffect(() => { reload() }, [bookingId])
 
   async function handlePayRemaining() {
+    if (booking.status === 'pending_remaining') {
+      navigation.navigate('Payment', { bookingId, amount: remaining, method: 'dp', vendorBank: null })
+      return
+    }
     try {
       const { data } = await api.post(`/bookings/${bookingId}/pay-remaining`)
-      navigation.navigate('Payment', {
-        bookingId,
-        amount: data.amount,
-        method: data.payment_method || 'transfer',
-        vendorBank: booking?.vendors?.vendor_bank_accounts?.[0] || null,
-      })
+      navigation.navigate('Payment', { bookingId, amount: data.amount, method: 'dp', vendorBank: null })
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Gagal membuat pembayaran')
     }
+  }
+
+  async function handleCancel() {
+    Alert.alert(
+      'Batalkan Pesanan?',
+      'Pesanan yang dibatalkan tidak dapat dikembalikan. Jika DP sudah dibayar, hubungi admin untuk refund.',
+      [
+        { text: 'Tidak', style: 'cancel' },
+        {
+          text: 'Batalkan Pesanan',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.post(`/bookings/${bookingId}/cancel`, { reason: 'Dibatalkan oleh customer' })
+              reload()
+              Alert.alert('Berhasil', 'Pesanan berhasil dibatalkan')
+            } catch (e: any) {
+              Alert.alert('Error', e.response?.data?.error || 'Gagal membatalkan pesanan')
+            }
+          },
+        },
+      ]
+    )
   }
 
   async function handleSimulatePay() {
@@ -75,10 +97,11 @@ export default function OrderDetailScreen() {
 
   const st = STATUS_INFO[booking.status] || { label: booking.status, color: '#374151', bg: '#F3F4F6' }
   const remaining = booking.total_amount - booking.dp_amount
-  const canPayRemaining = ['confirmed', 'dp_paid'].includes(booking.status) && remaining > 0
+  const canPayRemaining = ['confirmed', 'dp_paid', 'pending_remaining'].includes(booking.status) && remaining > 0
   const canSimulateDp = booking.status === 'pending_dp' && booking.payment_method !== 'cash' && booking.payment_method !== 'tempo'
   const canReview = booking.status === 'done' && !(booking.reviews?.length)
   const isPaid = ['fully_paid', 'done', 'in_progress'].includes(booking.status)
+  const canCancel = ['pending_dp', 'dp_paid', 'confirmed'].includes(booking.status)
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: bg }]}>
@@ -137,6 +160,12 @@ export default function OrderDetailScreen() {
             <Text style={styles.reviewBtnText}>⭐ Tulis Ulasan</Text>
           </TouchableOpacity>
         )}
+
+        {canCancel && (
+          <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
+            <Text style={styles.cancelBtnText}>Batalkan Pesanan</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   )
@@ -168,4 +197,6 @@ const styles = StyleSheet.create({
   payBtnText: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 15 },
   reviewBtn: { backgroundColor: '#FEF3C7', borderRadius: 12, padding: 14, alignItems: 'center' },
   reviewBtnText: { color: '#92400E', fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
+  cancelBtn: { borderWidth: 1, borderColor: '#EF4444', borderRadius: 12, padding: 14, alignItems: 'center' },
+  cancelBtnText: { color: '#EF4444', fontFamily: 'Poppins_500Medium', fontSize: 14 },
 })

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Alert, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useNavigation, CommonActions } from '@react-navigation/native'
 import { useAuthStore } from '../../store/authStore'
 import api from '../../services/api'
 
@@ -11,6 +12,7 @@ function openWeb(path: string) {
 }
 
 export default function VendorProfileScreen() {
+  const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const { user, logout } = useAuthStore()
   const [vendor, setVendor] = useState<any>(null)
@@ -49,11 +51,11 @@ export default function VendorProfileScreen() {
 
         {/* Menu items */}
         <View style={styles.menu}>
-          <MenuItem icon="📢" label="Tambah Iklan" highlight onPress={() => openWeb('/mitra/dashboard/ads')} />
+          <MenuItem icon="📢" label="Kelola Iklan" highlight onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'VendorAds' }))} />
           <MenuItem icon="👤" label="Pengaturan Akun" highlight onPress={() => openWeb('/mitra/dashboard/settings')} />
           <MenuItem icon="📊" label="Statistik" onPress={() => openWeb('/mitra/dashboard/stats')} />
           <MenuItem icon="🖼️" label="Portfolio & Layanan" onPress={() => openWeb('/mitra/dashboard/portfolio')} />
-          <MenuItem icon="🔔" label="Notifikasi" badge={2} onPress={() => {}} />
+          <MenuItem icon="🔔" label="Notifikasi" onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'Notifications' }))} />
           <MenuItem icon="❓" label="Pusat Bantuan" onPress={() => Alert.alert('Pusat Bantuan', 'Hubungi kami via WhatsApp atau email support.')} />
         </View>
 

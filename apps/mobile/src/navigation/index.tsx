@@ -19,6 +19,8 @@ import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen'
 import AffiliateScreen from '../screens/profile/AffiliateScreen'
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen'
+import NotificationsScreen from '../screens/profile/NotificationsScreen'
+import VendorAdsScreen from '../screens/vendor-mobile/VendorAdsScreen'
 
 export type RootStackParamList = {
   Splash: undefined
@@ -38,6 +40,8 @@ export type RootStackParamList = {
   ChangePassword: undefined
   Affiliate: undefined
   RateOrder: { bookingId: string; vendorName: string }
+  Notifications: undefined
+  VendorAds: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -78,6 +82,8 @@ export default function RootNavigator() {
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Affiliate" component={AffiliateScreen} options={{ headerShown: false }} />
           <Stack.Screen name="RateOrder" component={RateOrderScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="VendorAds" component={VendorAdsScreen} options={{ headerShown: false }} />
         </>
       )}
     </Stack.Navigator>

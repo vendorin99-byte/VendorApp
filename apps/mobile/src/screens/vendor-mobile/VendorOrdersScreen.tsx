@@ -5,11 +5,12 @@ import { useTheme } from '../../hooks/useTheme'
 import { formatRp } from '../../utils/currency'
 import api from '../../services/api'
 
-const TABS = ['Semua', 'Menunggu', 'Aktif', 'Selesai']
+const TABS = ['Semua', 'Menunggu', 'Aktif', 'Menunggu Lunas', 'Selesai']
 const STATUS_MAP: Record<string, string[]> = {
   Semua: [],
   Menunggu: ['pending_dp'],
   Aktif: ['dp_paid', 'confirmed', 'fully_paid', 'in_progress'],
+  'Menunggu Lunas': ['confirmed', 'dp_paid'],
   Selesai: ['done', 'cancelled'],
 }
 const STATUS_LABEL: Record<string, string> = {
@@ -61,6 +62,22 @@ export default function VendorOrdersScreen() {
     Alert.alert('Konfirmasi Cash', 'Pastikan uang sudah diterima secara tunai.', [
       { text: 'Batal', style: 'cancel' },
       { text: 'Konfirmasi', onPress: async () => { await api.patch(`/vendor/orders/${id}/confirm-cash`); setSelected(null); fetchOrders() } },
+    ])
+  }
+  async function remindPayment(id: string) {
+    Alert.alert('Kirim Pengingat?', 'Customer akan menerima notifikasi untuk segera melunasi pembayaran.', [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Kirim',
+        onPress: async () => {
+          try {
+            await api.post(`/vendor/orders/${id}/remind-payment`)
+            Alert.alert('Terkirim', 'Pengingat berhasil dikirim ke customer')
+          } catch {
+            Alert.alert('Gagal', 'Tidak dapat mengirim pengingat')
+          }
+        },
+      },
     ])
   }
 
@@ -135,6 +152,11 @@ export default function VendorOrdersScreen() {
                   {selected.status === 'pending_dp' && selected.payment_method === 'cash' && (
                     <TouchableOpacity style={[styles.btn, { backgroundColor: '#10B981' }]} onPress={() => confirmCash(selected.id)}>
                       <Text style={styles.btnText}>💵 Konfirmasi Cash</Text>
+                    </TouchableOpacity>
+                  )}
+                  {['confirmed', 'dp_paid'].includes(selected.status) && (
+                    <TouchableOpacity style={[styles.btn, { backgroundColor: '#F59E0B' }]} onPress={() => remindPayment(selected.id)}>
+                      <Text style={styles.btnText}>💰 Kirim Pengingat Lunas</Text>
                     </TouchableOpacity>
                   )}
                   {['fully_paid', 'confirmed'].includes(selected.status) && (

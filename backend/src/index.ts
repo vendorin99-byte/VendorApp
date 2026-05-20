@@ -29,6 +29,7 @@ import midtransWebhookRoutes from './routes/webhooks/midtrans'
 import vendorAdsRoutes from './routes/vendor/ads'
 import customerAdsRoutes from './routes/customer/ads'
 import adminAdsRoutes from './routes/admin/ads'
+import notificationsRoutes from './routes/customer/notifications'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -69,6 +70,7 @@ app.use('/api/webhooks/midtrans', midtransWebhookRoutes)
 app.use('/api/vendor/ads', vendorAdsRoutes)
 app.use('/api/ads', customerAdsRoutes)
 app.use('/api/admin/ads', adminAdsRoutes)
+app.use('/api/notifications', notificationsRoutes)
 
 app.listen(PORT, () => {
   console.log(`VendorIn backend running on port ${PORT}`)
