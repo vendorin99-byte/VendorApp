@@ -124,20 +124,25 @@ export default function VendorDetailScreen() {
           {/* Layanan */}
           {activeTab === 1 && (
             <View style={styles.section}>
-              <View style={[styles.chatHint, { backgroundColor: card }]}>
-                <Text style={styles.chatHintText}>💬 Konsultasi via chat sebelum memesan</Text>
-              </View>
               {activeServices.length === 0 && <Text style={[styles.empty, { color: subtext }]}>Belum ada layanan aktif</Text>}
               {activeServices.map((s: any) => (
-                <TouchableOpacity key={s.id} style={[styles.serviceCard, { backgroundColor: card, borderColor: cardBorder }]} onPress={openChat}>
+                <View key={s.id} style={[styles.serviceCard, { backgroundColor: card, borderColor: cardBorder }]}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.serviceName, { color: text }]}>{s.name}</Text>
                     {s.description && <Text style={[styles.serviceDesc, { color: subtext }]} numberOfLines={2}>{s.description}</Text>}
                     {s.duration && <Text style={[styles.serviceDuration, { color: subtext }]}>⏱ {s.duration}</Text>}
                     <Text style={styles.servicePrice}>{formatRp(s.price)}</Text>
+                    {s.dp_percent && <Text style={[styles.serviceDuration, { color: subtext }]}>DP {s.dp_percent}% = {formatRp(Math.floor(s.price * s.dp_percent / 100))}</Text>}
                   </View>
-                  <Text style={styles.chatTag}>Chat →</Text>
-                </TouchableOpacity>
+                  <View style={styles.serviceActions}>
+                    <TouchableOpacity style={styles.chatSmallBtn} onPress={openChat}>
+                      <Text style={styles.chatSmallText}>💬</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.bookSmallBtn} onPress={() => navigation.navigate('Booking', { vendorId, serviceId: s.id })}>
+                      <Text style={styles.bookSmallText}>Pesan</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               ))}
             </View>
           )}
@@ -228,14 +233,16 @@ const styles = StyleSheet.create({
   contactIcon: { fontSize: 18, marginTop: 2 },
   contactLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11 },
   contactValue: { fontFamily: 'Poppins_500Medium', fontSize: 14, marginTop: 2 },
-  chatHint: { borderRadius: 10, padding: 10, marginBottom: 12 },
-  chatHintText: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: '#3B5BDB' },
-  serviceCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderRadius: 12, marginBottom: 10 },
+  serviceCard: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderRadius: 12, marginBottom: 10, gap: 12 },
   serviceName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
   serviceDesc: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 2 },
-  serviceDuration: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 2 },
-  servicePrice: { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#3B5BDB', marginTop: 6 },
-  chatTag: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#3B5BDB' },
+  serviceDuration: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 4 },
+  servicePrice: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: '#3B5BDB', marginTop: 8 },
+  serviceActions: { alignItems: 'center', gap: 8, paddingTop: 4 },
+  chatSmallBtn: { width: 36, height: 36, borderRadius: 10, borderWidth: 1.5, borderColor: '#3B5BDB', alignItems: 'center', justifyContent: 'center' },
+  chatSmallText: { fontSize: 16 },
+  bookSmallBtn: { backgroundColor: '#3B5BDB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
+  bookSmallText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: '#fff' },
   ratingBig: { alignItems: 'center', paddingVertical: 24, borderRadius: 14, marginBottom: 16 },
   ratingBigNum: { fontFamily: 'Poppins_700Bold', fontSize: 48 },
   stars: { fontSize: 20, marginTop: 4 },
