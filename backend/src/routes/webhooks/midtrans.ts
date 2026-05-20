@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { supabase } from '../../lib/supabase'
 import { verifyMidtransSignature } from '../../lib/midtrans'
 import { creditWallet } from '../../services/wallet'
+import { sendPushNotification } from '../../services/pushNotification'
 
 const router = Router()
 
@@ -19,7 +20,7 @@ router.post('/', async (req, res) => {
 
   const { data: transaction } = await supabase
     .from('transactions')
-    .select('*, bookings(*)')
+    .select('*, bookings(*, services(name), vendors(user_id))')
     .eq('tripay_reference', order_id)
     .single()
 
@@ -28,7 +29,11 @@ router.post('/', async (req, res) => {
   }
 
   const booking = transaction.bookings as any
-  const isFullPayment = transaction.type === 'full'
+  const serviceName = booking.services?.name || 'Layanan'
+
+  // full = bayar lunas sekaligus, remaining = pelunasan DP
+  const isFullPayment = transaction.type === 'full' || transaction.type === 'remaining'
+  const isDp = transaction.type === 'dp'
   const newStatus = isFullPayment ? 'fully_paid' : 'dp_paid'
 
   await supabase.from('transactions').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', transaction.id)
@@ -40,13 +45,49 @@ router.post('/', async (req, res) => {
       booking.vendor_received,
       'credit_order',
       booking.id,
-      `QRIS — Pesanan #${booking.id.slice(0, 8)}`
+      `QRIS ${transaction.type === 'remaining' ? 'Pelunasan' : 'Lunas'} — #${booking.id.slice(0, 8)} ${serviceName}`
     )
-  } else {
+    // Notif vendor: uang masuk
+    const vendorUserId = booking.vendors?.user_id
+    if (vendorUserId) {
+      await sendPushNotification(
+        vendorUserId,
+        '💰 Pembayaran Diterima!',
+        `Pelunasan pesanan "${serviceName}" telah dikonfirmasi. Dana menuju dompet Anda.`,
+        { type: 'payment_received', bookingId: booking.id }
+      )
+    }
+    // Notif customer: sukses bayar lunas
+    await sendPushNotification(
+      booking.customer_id,
+      '✅ Pembayaran Lunas Berhasil!',
+      `Pesanan "${serviceName}" sudah lunas dan sedang diproses vendor.`,
+      { type: 'payment_success', bookingId: booking.id }
+    )
+  } else if (isDp) {
+    // DP masuk ke escrow (wallet_pending)
     const { data: vendor } = await supabase.from('vendors').select('wallet_pending').eq('id', booking.vendor_id).single()
     await supabase.from('vendors').update({
       wallet_pending: ((vendor?.wallet_pending) || 0) + booking.dp_amount,
     }).eq('id', booking.vendor_id)
+
+    // Notif vendor: DP masuk, minta konfirmasi
+    const vendorUserId = booking.vendors?.user_id
+    if (vendorUserId) {
+      await sendPushNotification(
+        vendorUserId,
+        '🔔 DP Diterima — Konfirmasi Pesanan',
+        `DP pesanan "${serviceName}" sudah masuk. Buka app untuk konfirmasi.`,
+        { type: 'dp_received', bookingId: booking.id }
+      )
+    }
+    // Notif customer: DP sukses
+    await sendPushNotification(
+      booking.customer_id,
+      '✅ DP Berhasil Dibayar!',
+      `DP untuk "${serviceName}" sudah diterima. Menunggu konfirmasi vendor.`,
+      { type: 'dp_paid', bookingId: booking.id }
+    )
   }
 
   res.json({ success: true })
