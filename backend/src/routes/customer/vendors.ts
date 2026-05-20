@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
       services(id, name, price, is_active)
     `)
     .eq('verified', true)
-    .eq('is_active', true)
+    .neq('is_active', false)
     .range(offset, offset + limit - 1)
 
   if (category) query = query.eq('category', category)

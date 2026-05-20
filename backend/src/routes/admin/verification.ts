@@ -45,7 +45,7 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/approve', async (req, res) => {
   const { data: vendor, error } = await supabase
     .from('vendors')
-    .update({ verified: true, verified_at: new Date().toISOString(), verified_by: req.user!.id, rejected_reason: null })
+    .update({ verified: true, is_active: true, verified_at: new Date().toISOString(), verified_by: req.user!.id, rejected_reason: null })
     .eq('id', req.params.id)
     .select('*, users(email, name)')
     .single()
