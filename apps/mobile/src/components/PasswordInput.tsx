@@ -6,17 +6,19 @@ interface Props {
   onChangeText: (v: string) => void
   placeholder?: string
   style?: ViewStyle
+  dark?: boolean
 }
 
-export default function PasswordInput({ value, onChangeText, placeholder = 'Kata sandi', style }: Props) {
+export default function PasswordInput({ value, onChangeText, placeholder = 'Kata sandi', style, dark }: Props) {
   const [show, setShow] = useState(false)
   return (
-    <View style={[styles.wrapper, style]}>
+    <View style={[styles.wrapper, dark && styles.wrapperDark, style]}>
       <TextInput
-        style={styles.input}
+        style={[styles.input, dark && styles.inputDark]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
+        placeholderTextColor={dark ? '#555580' : '#9CA3AF'}
         secureTextEntry={!show}
         autoCapitalize="none"
       />
@@ -36,7 +38,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#fff',
   },
-  input: { flex: 1, padding: 14, fontSize: 15 },
+  wrapperDark: {
+    backgroundColor: '#1A1A2E',
+    borderColor: '#2A2A4A',
+  },
+  input: { flex: 1, padding: 14, fontSize: 15, color: '#1F2937' },
+  inputDark: { color: '#fff' },
   eye: { paddingHorizontal: 14, paddingVertical: 14 },
   eyeText: { fontSize: 18 },
 })

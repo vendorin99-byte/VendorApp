@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, StatusBar } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -31,56 +31,79 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <View style={styles.header}>
-        <Image source={require('../../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.subtitle}>Silahkan masuk dengan akun anda</Text>
-      </View>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <StatusBar barStyle="light-content" backgroundColor="#0D0D1A" />
 
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="📧  Email / No HP"
-          value={form.email}
-          onChangeText={(v) => setForm({ ...form, email: v })}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <PasswordInput
-          value={form.password}
-          onChangeText={(v) => setForm({ ...form, password: v })}
-          placeholder="🔒  Kata Sandi"
-        />
-        {!!error && <Text style={styles.error}>{error}</Text>}
+        <View style={styles.brand}>
+          <Image source={require('../../../assets/Logo.png')} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.poweredBy}>Powered By Gelas Kaca</Text>
+        </View>
 
-        <TouchableOpacity style={styles.btnPrimary} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.btnPrimaryText}>{loading ? 'Masuk...' : 'Masuk'}</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>Selamat Datang{'\n'}Kembali!</Text>
+        <Text style={styles.subtitle}>Masuk untuk melanjutkan</Text>
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotBtn}>
-          <Text style={styles.forgotText}>Lupa password?</Text>
-        </TouchableOpacity>
+        <View style={styles.form}>
+          <View>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="contoh@email.com"
+              placeholderTextColor="#555580"
+              value={form.email}
+              onChangeText={(v) => setForm({ ...form, email: v })}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+          <View>
+            <Text style={styles.label}>Kata Sandi</Text>
+            <PasswordInput
+              value={form.password}
+              onChangeText={(v) => setForm({ ...form, password: v })}
+              placeholder="Masukkan kata sandi"
+              dark
+            />
+          </View>
 
-        <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.btnOutlineText}>Daftar Sekarang</Text>
-        </TouchableOpacity>
-      </View>
+          {!!error && <Text style={styles.error}>{error}</Text>}
+
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotRow}>
+            <Text style={styles.forgotText}>Lupa password?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.btn} onPress={handleLogin} disabled={loading}>
+            <Text style={styles.btnText}>{loading ? 'Masuk...' : 'Masuk'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.registerRow}>
+          <Text style={styles.registerHint}>Belum punya akun? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.registerLink}>Daftar Sekarang</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24 },
-  header: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { width: 120, height: 120 },
-  subtitle: { fontSize: 15, color: '#6B7280', marginTop: 8, textAlign: 'center' },
-  form: { gap: 12, paddingBottom: 32 },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 14, fontSize: 15 },
-  error: { color: '#EF4444', fontSize: 13 },
-  btnPrimary: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center' },
-  btnPrimaryText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  forgotBtn: { alignItems: 'flex-end' },
-  forgotText: { color: '#6B7280', fontSize: 13 },
-  btnOutline: { borderWidth: 1.5, borderColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center' },
-  btnOutlineText: { color: '#3B5BDB', fontWeight: '600', fontSize: 16 },
+  container: { flexGrow: 1, backgroundColor: '#0D0D1A', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 32 },
+  brand: { alignItems: 'center', marginBottom: 40 },
+  logo: { width: 140, height: 140 },
+  poweredBy: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#555580', marginTop: 8 },
+  title: { fontFamily: 'Poppins_700Bold', fontSize: 28, color: '#fff', lineHeight: 38, marginBottom: 6 },
+  subtitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#9CA3AF', marginBottom: 28 },
+  form: { gap: 16 },
+  label: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#9CA3AF', marginBottom: 6 },
+  input: { fontFamily: 'Poppins_400Regular', borderWidth: 1, borderColor: '#2A2A4A', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', backgroundColor: '#1A1A2E' },
+  error: { fontFamily: 'Poppins_400Regular', color: '#EF4444', fontSize: 13 },
+  forgotRow: { alignItems: 'flex-end' },
+  forgotText: { fontFamily: 'Poppins_400Regular', color: '#9CA3AF', fontSize: 13 },
+  btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 4 },
+  btnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 16 },
+  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
+  registerHint: { fontFamily: 'Poppins_400Regular', color: '#9CA3AF', fontSize: 14 },
+  registerLink: { fontFamily: 'Poppins_600SemiBold', color: '#3B5BDB', fontSize: 14 },
 })

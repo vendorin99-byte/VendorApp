@@ -1,0 +1,17 @@
+export const colors = {
+  dark: '#0D0D1A',
+  darkCard: '#1A1A2E',
+  darkBorder: '#2A2A4A',
+  primary: '#3B5BDB',
+  primaryLight: '#EEF2FF',
+  white: '#FFFFFF',
+  gray100: '#F9FAFB',
+  gray200: '#E5E7EB',
+  gray400: '#9CA3AF',
+  gray500: '#555580',
+  gray600: '#6B7280',
+  gray800: '#1F2937',
+  green: '#10B981',
+  red: '#EF4444',
+  yellow: '#F59E0B',
+}

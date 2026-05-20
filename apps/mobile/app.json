@@ -2,18 +2,18 @@
   "expo": {
     "name": "VendorApp",
     "slug": "vendorin",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/Logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/Logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
+        "foregroundImage": "./assets/Logo.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.vendorin.app",
@@ -29,7 +29,8 @@
     "plugins": [
       "expo-secure-store",
       "expo-location",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-font"
     ],
     "updates": {
       "url": "https://u.expo.dev/6d185c62-038d-49a2-9e24-9c9a81fdcb38",

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, StatusBar } from 'react-native'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation'
@@ -14,12 +14,13 @@ export default function OTPScreen() {
   const route = useRoute<Route>()
   const { setAuth } = useAuthStore()
   const { email } = route.params
+  const inputRef = useRef<TextInput>(null)
 
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [otp, setOtp] = useState('')
   const [timer, setTimer] = useState(60)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const inputs = useRef<(TextInput | null)[]>([])
+  const [focused, setFocused] = useState(false)
 
   useEffect(() => {
     if (timer <= 0) return
@@ -27,21 +28,12 @@ export default function OTPScreen() {
     return () => clearInterval(id)
   }, [timer])
 
-  function handleChange(val: string, index: number) {
-    const next = [...otp]
-    next[index] = val.replace(/\D/g, '')
-    setOtp(next)
-    if (val && index < 5) inputs.current[index + 1]?.focus()
-    if (!val && index > 0) inputs.current[index - 1]?.focus()
-  }
-
   async function handleVerify() {
-    const code = otp.join('')
-    if (code.length < 6) return setError('Masukkan 6 digit kode OTP')
+    if (otp.length < 6) return setError('Masukkan 6 digit kode OTP')
     setLoading(true)
     setError('')
     try {
-      const { data } = await api.post('/auth/verify-otp', { email, otp: code })
+      const { data } = await api.post('/auth/verify-otp', { email, otp })
       await setAuth(data.token, data.user)
       navigation.replace('Main')
     } catch (e: any) {
@@ -53,6 +45,7 @@ export default function OTPScreen() {
 
   async function handleResend() {
     setTimer(60)
+    setOtp('')
     await api.post('/auth/resend-otp', { email })
   }
 
@@ -61,24 +54,41 @@ export default function OTPScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>VendorApp</Text>
-      <Text style={styles.title}>Kode Verifikasi Terkirim</Text>
-      <Text style={styles.subtitle}>{`${mm}:${ss}`}</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#0D0D1A" />
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
 
-      <View style={styles.otpRow}>
-        {otp.map((digit, i) => (
-          <TextInput
-            key={i}
-            ref={(r) => { inputs.current[i] = r }}
-            style={[styles.otpInput, digit && styles.otpFilled]}
-            value={digit}
-            onChangeText={(v) => handleChange(v, i)}
-            keyboardType="number-pad"
-            maxLength={1}
-            textAlign="center"
-          />
-        ))}
+      <View style={styles.brand}>
+        <Image source={require('../../../assets/Logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
+
+      <Text style={styles.title}>Kode Verifikasi</Text>
+      <Text style={styles.subtitle}>Kode dikirim ke{'\n'}<Text style={styles.emailHighlight}>{email}</Text></Text>
+
+      <Text style={styles.timer}>{mm} : {ss}</Text>
+
+      <TouchableOpacity
+        style={[styles.inputBox, focused && styles.inputFocused]}
+        onPress={() => inputRef.current?.focus()}
+        activeOpacity={1}
+      >
+        <TextInput
+          ref={inputRef}
+          style={styles.hiddenInput}
+          value={otp}
+          onChangeText={(v) => { setOtp(v.replace(/\D/g, '').slice(0, 6)); setError('') }}
+          keyboardType="number-pad"
+          maxLength={6}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        <View style={styles.dots}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <View key={i} style={[styles.dot, i < otp.length && styles.dotFilled]} />
+          ))}
+        </View>
+      </TouchableOpacity>
 
       {!!error && <Text style={styles.error}>{error}</Text>}
 
@@ -87,7 +97,7 @@ export default function OTPScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={handleResend} disabled={timer > 0} style={styles.resend}>
-        <Text style={[styles.resendText, timer > 0 && { color: '#9CA3AF' }]}>
+        <Text style={[styles.resendText, timer > 0 && { color: '#555580' }]}>
           {timer > 0 ? `Kirim ulang dalam ${mm}:${ss}` : 'Kirim ulang kode'}
         </Text>
       </TouchableOpacity>
@@ -96,16 +106,35 @@ export default function OTPScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24, alignItems: 'center', justifyContent: 'center' },
-  logo: { fontSize: 28, fontWeight: 'bold', color: '#3B5BDB', marginBottom: 32 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 8 },
-  subtitle: { fontSize: 32, fontWeight: 'bold', color: '#3B5BDB', marginBottom: 32 },
-  otpRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  otpInput: { width: 46, height: 56, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, fontSize: 22, fontWeight: 'bold', color: '#1F2937' },
-  otpFilled: { borderColor: '#3B5BDB', backgroundColor: '#EEF2FF' },
-  error: { color: '#EF4444', fontSize: 13, marginBottom: 12 },
-  btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center', width: '100%' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#0D0D1A', padding: 24, alignItems: 'center' },
+  back: { alignSelf: 'flex-start', marginTop: 12, marginBottom: 8 },
+  backIcon: { fontSize: 22, color: '#fff' },
+  brand: { alignItems: 'center', marginBottom: 24, marginTop: 12 },
+  logo: { width: 80, height: 80 },
+  title: { fontFamily: 'Poppins_700Bold', fontSize: 24, color: '#fff', marginBottom: 8 },
+  subtitle: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: '#9CA3AF', marginBottom: 8, textAlign: 'center', lineHeight: 20 },
+  emailHighlight: { fontFamily: 'Poppins_600SemiBold', color: '#3B5BDB' },
+  timer: { fontFamily: 'Poppins_700Bold', fontSize: 32, color: '#3B5BDB', marginBottom: 28 },
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A4A',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    width: '100%',
+    backgroundColor: '#1A1A2E',
+  },
+  inputFocused: { borderColor: '#3B5BDB' },
+  hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
+  dots: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
+  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#2A2A4A' },
+  dotFilled: { backgroundColor: '#3B5BDB' },
+  error: { fontFamily: 'Poppins_400Regular', color: '#EF4444', fontSize: 13, marginTop: 10 },
+  btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 16, alignItems: 'center', width: '100%', marginTop: 28 },
+  btnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 16 },
   resend: { marginTop: 16, padding: 8 },
-  resendText: { color: '#3B5BDB', fontSize: 14 },
+  resendText: { fontFamily: 'Poppins_500Medium', color: '#3B5BDB', fontSize: 14 },
 })
