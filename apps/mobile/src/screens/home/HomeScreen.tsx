@@ -1,26 +1,36 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, ScrollView, FlatList, TouchableOpacity, StyleSheet, RefreshControl, StatusBar } from 'react-native'
+import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, StatusBar, FlatList } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
 import VendorCard from '../../components/VendorCard'
-import AdBanner from '../../components/AdBanner'
 import AdPopup from '../../components/AdPopup'
+import DarkLightToggle from '../../components/DarkLightToggle'
+import { useThemeStore } from '../../store/themeStore'
 import api from '../../services/api'
 
 type Nav = NativeStackNavigationProp<RootStackParamList>
 
-const CATEGORIES = ['Semua', 'EO', 'Fotografer', 'Wedding', 'Katering', 'Dekorasi', 'Sewa Mobil']
+const CATEGORIES = [
+  { key: 'Semua', label: 'Semua', icon: '🏠' },
+  { key: 'EO', label: 'Event\nOrganizer', icon: '🎪' },
+  { key: 'Fotografer', label: 'Foto /\nVideo', icon: '📷' },
+  { key: 'Wedding', label: 'Wedding', icon: '💒' },
+  { key: 'Katering', label: 'Food &\nBeverages', icon: '🍽️' },
+  { key: 'Dekorasi', label: 'Decoration', icon: '🎀' },
+  { key: 'Sewa Mobil', label: 'Sewa\nMobil', icon: '🚗' },
+  { key: 'Musik', label: 'Music', icon: '🎵' },
+]
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>()
   const insets = useSafeAreaInsets()
+  const { isDark } = useThemeStore()
   const [vendors, setVendors] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('Semua')
   const [refreshing, setRefreshing] = useState(false)
-  const [adShown, setAdShown] = useState(false)
 
   async function fetchVendors() {
     try {
@@ -40,76 +50,119 @@ export default function HomeScreen() {
     setRefreshing(false)
   }, [search, category])
 
+  const bg = isDark ? '#0D0D1A' : '#F9FAFB'
+  const cardBg = isDark ? '#1A1A2E' : '#fff'
+  const textPrimary = isDark ? '#fff' : '#1F2937'
+  const textSub = isDark ? '#9CA3AF' : '#6B7280'
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      {!adShown && <AdPopup />}
+    <View style={[styles.root, { backgroundColor: bg }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#3B5BDB" />
+      <AdPopup />
 
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="🔍  Cari jasa, vendor, dan lainnya"
-          value={search}
-          onChangeText={setSearch}
-          returnKeyType="search"
-        />
-      </View>
+      {/* Blue header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Temukan Jasa Terbaik{'\n'}untuk Acara Anda</Text>
+          </View>
+          <DarkLightToggle />
+        </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        {/* Search inputs */}
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari jasa EO, Sewa Mobil..."
+            placeholderTextColor="#9CA3AF"
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+          />
+        </View>
+
+        {/* Category circles */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
           {CATEGORIES.map((c) => (
             <TouchableOpacity
-              key={c}
-              style={[styles.chip, category === c && styles.chipActive]}
-              onPress={() => setCategory(c)}
+              key={c.key}
+              style={styles.catItem}
+              onPress={() => setCategory(c.key)}
             >
-              <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c}</Text>
+              <View style={[styles.catCircle, category === c.key && styles.catCircleActive]}>
+                <Text style={styles.catIcon}>{c.icon}</Text>
+              </View>
+              <Text style={styles.catLabel}>{c.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
 
-        <AdBanner />
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rekomendasi Vendor</Text>
-          <Text style={styles.sectionSub}>{vendors.length} vendor ditemukan</Text>
-        </View>
-
-        <View style={styles.list}>
-          {vendors.map((vendor) => (
-            <VendorCard
-              key={vendor.id}
-              vendor={vendor}
-              onPress={() => navigation.navigate('VendorDetail', { vendorId: vendor.id })}
-            />
-          ))}
-          {!vendors.length && (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>Tidak ada vendor ditemukan</Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      {/* Vendor list */}
+      <FlatList
+        data={vendors}
+        keyExtractor={(v) => v.id}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B5BDB" />}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <Text style={[styles.listTitle, { color: textPrimary }]}>Rekomendasi Vendor</Text>
+            <Text style={[styles.listSub, { color: textSub }]}>{vendors.length} vendor ditemukan</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <VendorCard
+            vendor={item}
+            dark={isDark}
+            onPress={() => navigation.navigate('VendorDetail', { vendorId: item.id })}
+          />
+        )}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={[styles.emptyText, { color: textSub }]}>Tidak ada vendor ditemukan</Text>
+          </View>
+        }
+      />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 10 },
-  searchInput: { backgroundColor: '#F3F4F6', borderRadius: 12, padding: 12, fontSize: 15 },
-  chips: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  chipActive: { backgroundColor: '#3B5BDB', borderColor: '#3B5BDB' },
-  chipText: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  chipTextActive: { color: '#fff' },
-  section: { paddingHorizontal: 16, marginBottom: 8 },
-  sectionTitle: { fontSize: 17, fontWeight: 'bold', color: '#1F2937' },
-  sectionSub: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  root: { flex: 1 },
+  header: { backgroundColor: '#3B5BDB', paddingHorizontal: 20, paddingBottom: 20 },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+  headerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#fff', lineHeight: 32 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+    marginBottom: 16,
+  },
+  searchIcon: { fontSize: 16 },
+  searchInput: { fontFamily: 'Poppins_400Regular', flex: 1, fontSize: 14, color: '#1F2937' },
+  catRow: { gap: 16, paddingBottom: 4 },
+  catItem: { alignItems: 'center', width: 64 },
+  catCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  catCircleActive: { backgroundColor: '#fff' },
+  catIcon: { fontSize: 22 },
+  catLabel: { fontFamily: 'Poppins_500Medium', fontSize: 10, color: '#fff', textAlign: 'center', lineHeight: 14 },
+  list: { padding: 16, paddingBottom: 24 },
+  listHeader: { marginBottom: 12 },
+  listTitle: { fontFamily: 'Poppins_700Bold', fontSize: 16 },
+  listSub: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 2 },
   empty: { alignItems: 'center', padding: 40 },
-  emptyText: { color: '#9CA3AF', fontSize: 15 },
+  emptyText: { fontFamily: 'Poppins_400Regular', fontSize: 15 },
 })

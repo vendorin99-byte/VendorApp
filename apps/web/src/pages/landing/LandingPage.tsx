@@ -1,70 +1,147 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+import api from '../../services/api'
 
-const benefits = [
-  { icon: '🎯', title: 'Jangkau Lebih Banyak', desc: 'Tampil di hadapan ribuan customer yang aktif mencari vendor acara' },
-  { icon: '📊', title: 'Kelola dengan Mudah', desc: 'Dashboard lengkap untuk pesanan, portofolio, dan statistik bisnis Anda' },
-  { icon: '💰', title: 'Bayar dengan Aman', desc: 'Sistem pembayaran escrow memastikan dana Anda terlindungi' },
+const CATEGORIES = [
+  { key: '', label: 'Semua', icon: '🏠' },
+  { key: 'Wedding Organizer', label: 'Wedding', icon: '💒' },
+  { key: 'Fotografer', label: 'Foto/Video', icon: '📷' },
+  { key: 'Event Organizer', label: 'EO', icon: '🎪' },
+  { key: 'Katering', label: 'Katering', icon: '🍽️' },
+  { key: 'Dekorasi', label: 'Dekorasi', icon: '🎀' },
+  { key: 'Musik', label: 'Musik', icon: '🎵' },
 ]
 
-const steps = [
-  { num: '1', title: 'Daftar & Upload Dokumen', desc: 'Daftar gratis dan upload KTP untuk verifikasi' },
-  { num: '2', title: 'Setup Profil Bisnis', desc: 'Tambahkan foto, paket layanan, dan lokasi usaha Anda' },
-  { num: '3', title: 'Terima Pesanan', desc: 'Mulai terima pesanan dari customer di seluruh Indonesia' },
-]
+function makeIcon(emoji: string) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="background:#3B5BDB;border-radius:50% 50% 50% 0;width:36px;height:36px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3)"><span style="transform:rotate(45deg);font-size:16px">${emoji}</span></div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 36],
+    popupAnchor: [0, -36],
+  })
+}
 
 export default function LandingPage() {
+  const [vendors, setVendors] = useState<any[]>([])
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const [center] = useState<[number, number]>([-6.2, 106.816])
+
+  useEffect(() => {
+    const params: Record<string, string> = {}
+    if (search) params.search = search
+    if (category) params.category = category
+    api.get('/vendors', { params }).then((r) => setVendors(r.data.data || [])).catch(() => {})
+  }, [search, category])
+
+  function getCatIcon(cat: string) {
+    const found = CATEGORIES.find((c) => c.key === cat)
+    return found?.icon || '📍'
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="VendorApp" className="w-8 h-8 object-contain" />
-          <span className="text-primary font-bold text-2xl">VendorApp</span>
-        </div>
-        <div className="flex gap-3">
-          <Link to="/mitra/login" className="px-4 py-2 text-primary font-medium hover:underline">Masuk</Link>
-          <Link to="/mitra/register" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">Daftar Gratis</Link>
-        </div>
-      </header>
-
-      <section className="text-center py-20 px-6 bg-gradient-to-b from-blue-50 to-white">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Kembangkan Bisnis Anda<br />bersama VendorApp</h1>
-        <p className="text-lg text-gray-600 mb-8">Platform terpercaya untuk vendor jasa acara di Indonesia</p>
-        <Link to="/mitra/register" className="inline-block px-8 py-3 bg-primary text-white rounded-xl text-lg font-semibold hover:bg-primary-dark transition-colors">
-          Daftar Sekarang Gratis
-        </Link>
-      </section>
-
-      <section className="py-16 px-6">
-        <h2 className="text-2xl font-bold text-center mb-10">Mengapa Pilih VendorApp?</h2>
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          {benefits.map((b) => (
-            <div key={b.title} className="text-center p-6 rounded-xl border hover:shadow-md transition-shadow">
-              <div className="text-4xl mb-3">{b.icon}</div>
-              <h3 className="font-semibold text-lg mb-2">{b.title}</h3>
-              <p className="text-gray-600 text-sm">{b.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="py-16 px-6 bg-gray-50">
-        <h2 className="text-2xl font-bold text-center mb-10">Cara Bergabung</h2>
-        <div className="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-          {steps.map((s) => (
-            <div key={s.num} className="flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0">{s.num}</div>
-              <div>
-                <h3 className="font-semibold mb-1">{s.title}</h3>
-                <p className="text-gray-600 text-sm">{s.desc}</p>
+    <div className="relative w-screen h-screen overflow-hidden bg-dark">
+      {/* Full-screen map */}
+      <MapContainer
+        center={center}
+        zoom={12}
+        className="w-full h-full z-0"
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {vendors.filter((v) => v.latitude && v.longitude).map((v) => (
+          <Marker
+            key={v.id}
+            position={[parseFloat(v.latitude), parseFloat(v.longitude)]}
+            icon={makeIcon(getCatIcon(v.category))}
+          >
+            <Popup>
+              <div className="p-1 min-w-[180px]">
+                <p className="font-bold text-sm text-gray-900">{v.business_name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{v.category}</p>
+                <p className="text-xs text-gray-500">{v.city}</p>
+                {v.avg_rating && (
+                  <p className="text-xs text-yellow-600 mt-1">⭐ {Number(v.avg_rating).toFixed(1)} · {v.total_reviews} ulasan</p>
+                )}
+                <a
+                  href={`/vendor/${v.id}`}
+                  className="block mt-2 text-center text-xs bg-primary text-white rounded-lg py-1.5 font-medium hover:bg-primary-dark transition-colors"
+                >
+                  Lihat Profil
+                </a>
               </div>
-            </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+
+      {/* Top bar overlay */}
+      <div className="absolute top-0 left-0 right-0 z-10 px-4 pt-4 pointer-events-none">
+        <div className="flex items-center gap-3 pointer-events-auto">
+          {/* Logo */}
+          <div className="flex items-center gap-2 bg-dark-card/90 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg border border-dark-border">
+            <img src="/logo.png" alt="VendorApp" className="w-7 h-7 object-contain" />
+            <span className="text-primary font-bold text-base tracking-wider">VENDOR APP</span>
+          </div>
+
+          {/* Search bar */}
+          <div className="flex-1 flex items-center bg-dark-card/90 backdrop-blur-sm rounded-2xl px-4 py-2.5 shadow-lg border border-dark-border gap-2">
+            <span className="text-white/40 text-sm">🔍</span>
+            <input
+              type="text"
+              placeholder="Cari vendor EO, fotografer, katering..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-white placeholder-white/30 text-sm outline-none"
+            />
+          </div>
+
+          {/* Auth buttons */}
+          <div className="flex gap-2">
+            <Link to="/mitra/login" className="bg-dark-card/90 backdrop-blur-sm text-white border border-dark-border px-4 py-2.5 rounded-2xl text-sm font-medium hover:border-primary transition-colors shadow-lg">
+              Masuk
+            </Link>
+            <Link to="/mitra/register" className="bg-primary text-white px-4 py-2.5 rounded-2xl text-sm font-semibold hover:bg-primary-dark transition-colors shadow-lg">
+              Daftar Vendor
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Category filter — horizontal scroll below search */}
+      <div className="absolute top-20 left-0 right-0 z-10 px-4 pointer-events-none">
+        <div className="flex gap-2 overflow-x-auto pb-1 pointer-events-auto" style={{ scrollbarWidth: 'none' }}>
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shadow-md border ${
+                category === c.key
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-dark-card/90 backdrop-blur-sm text-white/80 border-dark-border hover:border-primary'
+              }`}
+            >
+              <span>{c.icon}</span>
+              <span>{c.label}</span>
+            </button>
           ))}
         </div>
-      </section>
+      </div>
 
-      <footer className="border-t py-8 text-center text-sm text-gray-500">
-        © 2026 VendorApp. Semua hak dilindungi.
-      </footer>
+      {/* Bottom info bar */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <div className="bg-dark-card/90 backdrop-blur-sm text-white/60 text-xs px-5 py-2 rounded-full border border-dark-border shadow-lg">
+          {vendors.length > 0
+            ? `${vendors.length} vendor ditemukan di peta`
+            : 'Vendor ditampilkan sebagai pin di peta'}
+        </div>
+      </div>
     </div>
   )
 }

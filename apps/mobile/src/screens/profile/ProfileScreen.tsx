@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '../../store/authStore'
+import { useTheme } from '../../hooks/useTheme'
 import { RootStackParamList } from '../../navigation'
 
 type Nav = NativeStackNavigationProp<RootStackParamList>
@@ -11,6 +12,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation<Nav>()
   const { user, logout } = useAuthStore()
   const insets = useSafeAreaInsets()
+  const { isDark, bg, card, cardBorder, text, subtext, divider, statusBar, statusBarBg, headerBg, headerBorder } = useTheme()
 
   function handleLogout() {
     Alert.alert('Keluar', 'Apakah Anda yakin ingin keluar?', [
@@ -29,30 +31,30 @@ export default function ProfileScreen() {
   ]
 
   return (
-    <ScrollView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+    <ScrollView style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={statusBar} backgroundColor={statusBarBg} />
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: headerBg, borderBottomColor: headerBorder }]}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() || '?'}</Text>
         </View>
-        <Text style={styles.name}>{user?.name}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
+        <Text style={[styles.name, { color: text }]}>{user?.name}</Text>
+        <Text style={[styles.email, { color: subtext }]}>{user?.email}</Text>
         <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
           <Text style={styles.editBtnText}>Edit Profil</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.menu}>
+      <View style={[styles.menu, { backgroundColor: card, marginTop: 12 }]}>
         {MENU_ITEMS.map((item) => (
-          <TouchableOpacity key={item.label} style={styles.menuItem} onPress={item.onPress}>
+          <TouchableOpacity key={item.label} style={[styles.menuItem, { borderBottomColor: divider }]} onPress={item.onPress}>
             <Text style={styles.menuIcon}>{item.icon}</Text>
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <Text style={styles.menuArrow}>›</Text>
+            <Text style={[styles.menuLabel, { color: text }]}>{item.label}</Text>
+            <Text style={[styles.menuArrow, { color: subtext }]}>›</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+      <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: isDark ? '#2A1A1A' : '#FEF2F2' }]} onPress={handleLogout}>
         <Text style={styles.logoutText}>🚪  Keluar</Text>
       </TouchableOpacity>
 
@@ -62,19 +64,19 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#fff', alignItems: 'center', paddingBottom: 20, borderBottomWidth: 1, borderColor: '#E5E7EB' },
+  container: { flex: 1 },
+  header: { alignItems: 'center', paddingBottom: 20, borderBottomWidth: 1 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#3B5BDB', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  avatarText: { fontSize: 32, color: '#fff', fontWeight: 'bold' },
-  name: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
-  email: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  avatarText: { fontSize: 32, color: '#fff', fontFamily: 'Poppins_700Bold' },
+  name: { fontFamily: 'Poppins_700Bold', fontSize: 20 },
+  email: { fontFamily: 'Poppins_400Regular', fontSize: 14, marginTop: 4 },
   editBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, borderWidth: 1.5, borderColor: '#3B5BDB', borderRadius: 20 },
-  editBtnText: { color: '#3B5BDB', fontWeight: '600', fontSize: 14 },
-  menu: { backgroundColor: '#fff', marginTop: 12 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: '#F3F4F6' },
+  editBtnText: { color: '#3B5BDB', fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+  menu: {},
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1 },
   menuIcon: { fontSize: 18, width: 32 },
-  menuLabel: { flex: 1, fontSize: 15, color: '#1F2937' },
-  menuArrow: { fontSize: 20, color: '#9CA3AF' },
-  logoutBtn: { margin: 16, padding: 14, borderRadius: 12, backgroundColor: '#FEF2F2', alignItems: 'center' },
-  logoutText: { color: '#EF4444', fontWeight: '600', fontSize: 15 },
+  menuLabel: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 15 },
+  menuArrow: { fontFamily: 'Poppins_400Regular', fontSize: 20 },
+  logoutBtn: { margin: 16, padding: 14, borderRadius: 12, alignItems: 'center' },
+  logoutText: { color: '#EF4444', fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
 })

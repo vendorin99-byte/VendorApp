@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
+import { useTheme } from '../../hooks/useTheme'
 import LeafletMap from '../../components/LeafletMap'
 import api from '../../services/api'
 
@@ -13,10 +14,10 @@ type Nav = NativeStackNavigationProp<RootStackParamList>
 const RADII = ['1km', '5km', '10km', '25km']
 const CATEGORIES = ['Semua', 'EO', 'Fotografer', 'Katering', 'Sewa Mobil', 'Venue']
 
-
 export default function MapsScreen() {
   const navigation = useNavigation<Nav>()
   const insets = useSafeAreaInsets()
+  const { isDark, bg, card, cardBorder, text, subtext, statusBar, statusBarBg } = useTheme()
   const [vendors, setVendors] = useState<any[]>([])
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [radius, setRadius] = useState('10km')
@@ -35,7 +36,7 @@ export default function MapsScreen() {
   }, [])
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchVendors() {
       setLoading(true)
       try {
         const params: Record<string, string> = {
@@ -49,30 +50,38 @@ export default function MapsScreen() {
       } catch {}
       setLoading(false)
     }
-    fetch()
+    fetchVendors()
   }, [location, radius, category])
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={[styles.filters, { paddingTop: insets.top + 4 }]}>
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={statusBar} backgroundColor={statusBarBg} />
+      <View style={[styles.filters, { paddingTop: insets.top + 4, backgroundColor: isDark ? '#1A1A2E' : '#fff', borderBottomColor: cardBorder }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {RADII.map((r) => (
-            <TouchableOpacity key={r} style={[styles.chip, radius === r && styles.chipActive]} onPress={() => setRadius(r)}>
-              <Text style={[styles.chipText, radius === r && styles.chipTextActive]}>{r}</Text>
+            <TouchableOpacity
+              key={r}
+              style={[styles.chip, { backgroundColor: isDark ? '#2A2A4A' : '#F3F4F6', borderColor: cardBorder }, radius === r && styles.chipActive]}
+              onPress={() => setRadius(r)}
+            >
+              <Text style={[styles.chipText, { color: radius === r ? '#fff' : text }]}>{r}</Text>
             </TouchableOpacity>
           ))}
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: cardBorder }]} />
           {CATEGORIES.map((c) => (
-            <TouchableOpacity key={c} style={[styles.chip, category === c && styles.chipActive]} onPress={() => setCategory(c)}>
-              <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c}</Text>
+            <TouchableOpacity
+              key={c}
+              style={[styles.chip, { backgroundColor: isDark ? '#2A2A4A' : '#F3F4F6', borderColor: cardBorder }, category === c && styles.chipActive]}
+              onPress={() => setCategory(c)}
+            >
+              <Text style={[styles.chipText, { color: category === c ? '#fff' : text }]}>{c}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       {!loading && (
-        <View style={styles.info}>
+        <View style={[styles.info, { backgroundColor: isDark ? '#1A2A4A' : '#EEF2FF' }]}>
           <Text style={styles.infoText}>📍 {vendors.length} vendor dalam radius {radius}</Text>
         </View>
       )}
@@ -80,7 +89,7 @@ export default function MapsScreen() {
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#3B5BDB" />
-          <Text style={styles.loadingText}>Mencari vendor terdekat...</Text>
+          <Text style={[styles.loadingText, { color: subtext }]}>Mencari vendor terdekat...</Text>
         </View>
       ) : (
         <LeafletMap
@@ -92,22 +101,20 @@ export default function MapsScreen() {
           style={{ flex: 1 }}
         />
       )}
-
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  filters: { backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#E5E7EB' },
+  container: { flex: 1 },
+  filters: { borderBottomWidth: 1 },
   filterRow: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   chipActive: { backgroundColor: '#3B5BDB', borderColor: '#3B5BDB' },
-  chipText: { fontSize: 12, color: '#374151', fontWeight: '500' },
-  chipTextActive: { color: '#fff' },
-  divider: { width: 1, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
-  info: { backgroundColor: '#EEF2FF', paddingHorizontal: 14, paddingVertical: 6 },
-  infoText: { fontSize: 12, color: '#3B5BDB', fontWeight: '500' },
+  chipText: { fontFamily: 'Poppins_500Medium', fontSize: 12 },
+  divider: { width: 1, marginHorizontal: 4 },
+  info: { paddingHorizontal: 14, paddingVertical: 6 },
+  infoText: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: '#3B5BDB' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { color: '#6B7280' },
+  loadingText: { fontFamily: 'Poppins_400Regular' },
 })

@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useAuthStore } from '../store/authStore'
+import { useThemeStore } from '../store/themeStore'
 import TabNavigator from './TabNavigator'
 import VendorTabNavigator from './VendorTabNavigator'
 import SplashScreen from '../screens/auth/SplashScreen'
@@ -43,7 +44,15 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 
 export default function RootNavigator() {
   const { token, user } = useAuthStore()
+  const { isDark } = useThemeStore()
   const isVendor = user?.role === 'vendor'
+
+  const themedHeader = {
+    headerStyle: { backgroundColor: isDark ? '#1A1A2E' : '#fff' },
+    headerTintColor: isDark ? '#fff' : '#1F2937',
+    headerTitleStyle: { fontFamily: 'Poppins_600SemiBold', fontSize: 16 },
+    headerShadowVisible: false,
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -60,11 +69,11 @@ export default function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="Main" component={isVendor ? VendorTabNavigator : TabNavigator} />
-          <Stack.Screen name="VendorDetail" component={VendorDetailScreen} options={{ headerShown: true, title: '' }} />
-          <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: true, title: 'Buat Pesanan' }} />
-          <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: true, title: 'Pembayaran' }} />
-          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: true, title: 'Detail Pesanan' }} />
-          <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={{ headerShown: true }} />
+          <Stack.Screen name="VendorDetail" component={VendorDetailScreen} options={{ headerShown: true, title: '', ...themedHeader }} />
+          <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: true, title: 'Buat Pesanan', ...themedHeader }} />
+          <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: true, title: 'Pembayaran', ...themedHeader }} />
+          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: true, title: 'Detail Pesanan', ...themedHeader }} />
+          <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={{ headerShown: true, ...themedHeader }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Affiliate" component={AffiliateScreen} options={{ headerShown: false }} />

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, StatusBar } from 'react-native'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
+import { useTheme } from '../../hooks/useTheme'
 import { formatRp } from '../../utils/currency'
 import api from '../../services/api'
 
@@ -12,7 +14,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>
 export default function BookingScreen() {
   const route = useRoute<Route>()
   const navigation = useNavigation<Nav>()
+  const insets = useSafeAreaInsets()
   const { vendorId, serviceId } = route.params
+  const { isDark, bg, card, cardBorder, text, subtext, placeholder, statusBar } = useTheme()
 
   const [services, setServices] = useState<any[]>([])
   const [selected, setSelected] = useState<any>(null)
@@ -26,7 +30,7 @@ export default function BookingScreen() {
     { key: 'dp', label: 'DP dulu', desc: `DP ${selected?.dp_percent || 30}%`, icon: '🔖' },
     { key: 'lunas', label: 'Bayar Lunas', desc: 'Bayar penuh sekarang', icon: '✅' },
     { key: 'qris', label: 'QRIS', desc: 'Scan & bayar', icon: '📱' },
-    { key: 'transfer', label: 'Transfer Bank', desc: 'Transfer ke rekening vendor', icon: '🏦' },
+    { key: 'transfer', label: 'Transfer Bank', desc: 'Transfer rekening', icon: '🏦' },
     { key: 'cash', label: 'Tunai', desc: 'Bayar cash saat event', icon: '💵' },
     { key: 'tempo', label: 'Tempo 7 Hari', desc: 'Bayar setelah event', icon: '📅' },
   ]
@@ -65,120 +69,124 @@ export default function BookingScreen() {
   }
 
   const dpAmount = selected ? Math.floor(selected.price * (selected.dp_percent / 100)) : 0
-  const payNow = !selected ? 0
-    : (paymentMethod === 'dp') ? dpAmount
-    : (paymentMethod === 'tempo') ? 0
-    : selected.price
+  const payNow = !selected ? 0 : paymentMethod === 'dp' ? dpAmount : paymentMethod === 'tempo' ? 0 : selected.price
+
+  const inputStyle = [styles.input, { color: text, backgroundColor: card, borderColor: cardBorder }]
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.sectionTitle}>Pilih Paket Layanan</Text>
-      {services.map((s) => (
-        <TouchableOpacity
-          key={s.id}
-          style={[styles.serviceCard, selected?.id === s.id && styles.serviceCardSelected]}
-          onPress={() => setSelected(s)}
-        >
-          <View style={styles.serviceRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.serviceName}>{s.name}</Text>
-              {s.description && <Text style={styles.serviceDesc} numberOfLines={2}>{s.description}</Text>}
-            </View>
-            <Text style={styles.servicePrice}>{formatRp(s.price)}</Text>
-          </View>
-          {s.duration && <Text style={styles.serviceDuration}>⏱ {s.duration}</Text>}
-        </TouchableOpacity>
-      ))}
+    <View style={[styles.root, { backgroundColor: bg }]}>
+      <StatusBar barStyle={statusBar} backgroundColor={bg} />
+      <ScrollView style={styles.scroll} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
 
-      <Text style={styles.sectionTitle}>Tanggal Event</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD"
-        value={date}
-        onChangeText={setDate}
-      />
-
-      <Text style={styles.sectionTitle}>Jam Event (opsional)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="HH:MM"
-        value={time}
-        onChangeText={setTime}
-      />
-
-      <Text style={styles.sectionTitle}>Catatan / Request Khusus</Text>
-      <TextInput
-        style={[styles.input, styles.textarea]}
-        placeholder="Tulis catatan untuk vendor..."
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-        numberOfLines={4}
-      />
-
-      <Text style={styles.sectionTitle}>Metode Pembayaran</Text>
-      <View style={styles.methodGrid}>
-        {PAYMENT_METHODS.map((m) => (
+        <Text style={[styles.sectionTitle, { color: subtext }]}>Pilih Paket Layanan</Text>
+        {services.map((s) => (
           <TouchableOpacity
-            key={m.key}
-            style={[styles.methodCard, paymentMethod === m.key && styles.methodCardActive]}
-            onPress={() => setPaymentMethod(m.key)}
+            key={s.id}
+            style={[styles.card, { backgroundColor: card, borderColor: selected?.id === s.id ? '#3B5BDB' : cardBorder }]}
+            onPress={() => setSelected(s)}
           >
-            <Text style={styles.methodIcon}>{m.icon}</Text>
-            <Text style={[styles.methodLabel, paymentMethod === m.key && styles.methodLabelActive]}>{m.label}</Text>
-            <Text style={styles.methodDesc}>{m.desc}</Text>
+            <View style={styles.serviceRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.serviceName, { color: text }]}>{s.name}</Text>
+                {s.description && <Text style={[styles.serviceDesc, { color: subtext }]} numberOfLines={2}>{s.description}</Text>}
+              </View>
+              <Text style={styles.servicePrice}>{formatRp(s.price)}</Text>
+            </View>
+            {s.duration && <Text style={[styles.serviceDuration, { color: subtext }]}>⏱ {s.duration}</Text>}
           </TouchableOpacity>
         ))}
-      </View>
 
-      {selected && (
-        <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Ringkasan Pesanan</Text>
-          <View style={styles.summaryRow}><Text>Paket</Text><Text style={{ fontWeight: '600' }}>{selected.name}</Text></View>
-          <View style={styles.summaryRow}><Text>Harga Total</Text><Text>{formatRp(selected.price)}</Text></View>
-          <View style={styles.summaryRow}><Text>DP ({selected.dp_percent}%)</Text><Text style={styles.dpAmount}>{formatRp(dpAmount)}</Text></View>
-          <View style={styles.summaryRow}><Text style={{ color: '#6B7280', fontSize: 12 }}>Sisa dibayar setelah konfirmasi vendor</Text><Text style={{ color: '#6B7280', fontSize: 12 }}>{formatRp(selected.price - dpAmount)}</Text></View>
+        <Text style={[styles.sectionTitle, { color: subtext }]}>Tanggal Event</Text>
+        <TextInput style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={placeholder} value={date} onChangeText={setDate} />
+
+        <Text style={[styles.sectionTitle, { color: subtext }]}>Jam Event (opsional)</Text>
+        <TextInput style={inputStyle} placeholder="HH:MM" placeholderTextColor={placeholder} value={time} onChangeText={setTime} />
+
+        <Text style={[styles.sectionTitle, { color: subtext }]}>Catatan / Request Khusus</Text>
+        <TextInput
+          style={[inputStyle, styles.textarea]}
+          placeholder="Tulis catatan untuk vendor..."
+          placeholderTextColor={placeholder}
+          value={notes}
+          onChangeText={setNotes}
+          multiline numberOfLines={4}
+        />
+
+        <Text style={[styles.sectionTitle, { color: subtext }]}>Metode Pembayaran</Text>
+        <View style={styles.methodGrid}>
+          {PAYMENT_METHODS.map((m) => (
+            <TouchableOpacity
+              key={m.key}
+              style={[styles.methodCard, { backgroundColor: card, borderColor: paymentMethod === m.key ? '#3B5BDB' : cardBorder }]}
+              onPress={() => setPaymentMethod(m.key)}
+            >
+              <Text style={styles.methodIcon}>{m.icon}</Text>
+              <Text style={[styles.methodLabel, paymentMethod === m.key && styles.methodLabelActive, { color: paymentMethod === m.key ? '#3B5BDB' : subtext }]}>{m.label}</Text>
+              <Text style={[styles.methodDesc, { color: subtext }]}>{m.desc}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      )}
 
-      <TouchableOpacity style={[styles.btn, (!selected || !date) && styles.btnDisabled]} onPress={handleBook} disabled={loading || !selected || !date}>
-        <Text style={styles.btnText}>
-          {loading ? 'Memproses...' :
-            paymentMethod === 'tempo' ? 'Pesan Sekarang (Bayar Nanti)' :
-            paymentMethod === 'cash' ? 'Pesan Sekarang (Bayar Tunai)' :
-            `Lanjut Bayar ${payNow ? formatRp(payNow) : ''}`}
-        </Text>
-      </TouchableOpacity>
+        {selected && (
+          <View style={[styles.summary, { backgroundColor: card }]}>
+            <Text style={[styles.summaryTitle, { color: text }]}>Ringkasan Pesanan</Text>
+            <SummaryRow label="Paket" value={selected.name} text={text} subtext={subtext} />
+            <SummaryRow label="Harga Total" value={formatRp(selected.price)} text={text} subtext={subtext} />
+            <SummaryRow label={`DP (${selected.dp_percent}%)`} value={formatRp(dpAmount)} highlight text={text} subtext={subtext} />
+            <SummaryRow label="Sisa bayar setelah konfirmasi" value={formatRp(selected.price - dpAmount)} small text={text} subtext={subtext} />
+          </View>
+        )}
 
-      <View style={{ height: 32 }} />
-    </ScrollView>
+        <TouchableOpacity
+          style={[styles.btn, (!selected || !date) && styles.btnDisabled]}
+          onPress={handleBook}
+          disabled={loading || !selected || !date}
+        >
+          <Text style={styles.btnText}>
+            {loading ? 'Memproses...'
+              : paymentMethod === 'tempo' ? 'Pesan Sekarang (Bayar Nanti)'
+              : paymentMethod === 'cash' ? 'Pesan Sekarang (Bayar Tunai)'
+              : `Lanjut Bayar ${payNow ? formatRp(payNow) : ''}`}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  )
+}
+
+function SummaryRow({ label, value, highlight, small, text, subtext }: { label: string; value: string; highlight?: boolean; small?: boolean; text: string; subtext: string }) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={[styles.summaryLabel, { color: subtext }, small && { fontSize: 11 }]}>{label}</Text>
+      <Text style={[styles.summaryValue, { color: highlight ? '#3B5BDB' : text }, small && { fontSize: 11, color: subtext }]}>{value}</Text>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '600', color: '#374151', marginTop: 20, marginBottom: 10 },
-  serviceCard: { padding: 14, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, marginBottom: 10 },
-  serviceCardSelected: { borderColor: '#3B5BDB', backgroundColor: '#EEF2FF' },
+  root: { flex: 1 },
+  scroll: { flex: 1 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, marginTop: 20, marginBottom: 10 },
+  card: { padding: 14, borderWidth: 1.5, borderRadius: 14, marginBottom: 10 },
   serviceRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  serviceName: { fontSize: 15, fontWeight: '600', color: '#1F2937' },
-  serviceDesc: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  servicePrice: { fontSize: 15, color: '#3B5BDB', fontWeight: 'bold' },
-  serviceDuration: { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, fontSize: 15 },
+  serviceName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
+  serviceDesc: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 2 },
+  servicePrice: { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#3B5BDB' },
+  serviceDuration: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 4 },
+  input: { fontFamily: 'Poppins_400Regular', borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 15 },
   textarea: { height: 100, textAlignVertical: 'top' },
-  summary: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, marginTop: 20, gap: 8 },
-  summaryTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  dpAmount: { color: '#3B5BDB', fontWeight: 'bold' },
   methodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  methodCard: { width: '30%', flexGrow: 1, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, padding: 10, alignItems: 'center', backgroundColor: '#fff' },
-  methodCardActive: { borderColor: '#3B5BDB', backgroundColor: '#EEF2FF' },
+  methodCard: { width: '30%', flexGrow: 1, borderWidth: 1.5, borderRadius: 12, padding: 10, alignItems: 'center' },
   methodIcon: { fontSize: 20, marginBottom: 4 },
-  methodLabel: { fontSize: 12, fontWeight: '600', color: '#374151', textAlign: 'center' },
+  methodLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, textAlign: 'center' },
   methodLabelActive: { color: '#3B5BDB' },
-  methodDesc: { fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginTop: 2 },
-  btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
-  btnDisabled: { backgroundColor: '#93C5FD' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  methodDesc: { fontFamily: 'Poppins_400Regular', fontSize: 10, textAlign: 'center', marginTop: 2 },
+  summary: { borderRadius: 14, padding: 14, marginTop: 20, gap: 8 },
+  summaryTitle: { fontFamily: 'Poppins_700Bold', fontSize: 14, marginBottom: 4 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryLabel: { fontFamily: 'Poppins_400Regular', fontSize: 13 },
+  summaryValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  btn: { backgroundColor: '#3B5BDB', borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 20 },
+  btnDisabled: { backgroundColor: '#1A2A5A' },
+  btnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 16 },
 })
