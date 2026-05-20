@@ -3,7 +3,7 @@ export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
   return (
     <img
-      src="/logo.png"
+      src="/Logo.png"
       alt="Vendor App"
       width={dims}
       height={dims}

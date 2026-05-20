@@ -34,7 +34,7 @@ export default function InvitePage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
       <header className="px-6 py-4 flex items-center gap-2 border-b bg-white/80 backdrop-blur">
-        <img src="/logo.png" alt="VendorApp" className="w-8 h-8 object-contain" />
+        <img src="/Logo.png" alt="VendorApp" className="w-8 h-8 object-contain" />
         <span className="text-primary font-bold text-xl">VendorApp</span>
       </header>
 

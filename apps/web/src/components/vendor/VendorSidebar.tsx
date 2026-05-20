@@ -19,7 +19,7 @@ export default function VendorSidebar() {
   return (
     <aside className="w-60 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b flex items-center gap-3">
-        <img src="/logo.png" alt="VendorApp" className="w-9 h-9 object-contain" />
+        <img src="/Logo.png" alt="VendorApp" className="w-9 h-9 object-contain" />
         <div>
           <div className="text-primary font-bold text-lg leading-tight">VendorApp</div>
           <div className="text-xs text-gray-500 truncate">{user?.name}</div>

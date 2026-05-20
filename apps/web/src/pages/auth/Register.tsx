@@ -79,7 +79,7 @@ export default function Register() {
 
         {/* Left panel */}
         <div className="hidden md:flex flex-col items-center justify-center w-2/5 bg-gradient-to-b from-primary to-blue-800 p-10 gap-6">
-          <img src="/logo.png" alt="VendorApp" className="w-24 h-24 object-contain" />
+          <img src="/Logo.png" alt="VendorApp" className="w-24 h-24 object-contain" />
           <div className="text-center">
             <p className="text-white/60 text-sm font-medium tracking-widest uppercase mb-1">Daftar Sebagai</p>
             <h1 className="text-white font-bold text-2xl tracking-widest">VENDOR</h1>
@@ -117,7 +117,7 @@ export default function Register() {
         {/* Right panel — form */}
         <div className="flex-1 flex flex-col justify-center p-8 md:p-10 overflow-y-auto">
           <div className="flex md:hidden justify-center mb-4">
-            <img src="/logo.png" alt="VendorApp" className="w-14 h-14 object-contain" />
+            <img src="/Logo.png" alt="VendorApp" className="w-14 h-14 object-contain" />
           </div>
 
           <h2 className="text-white font-bold text-2xl mb-1">Kembangkan Bisnis Anda</h2>

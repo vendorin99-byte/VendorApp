@@ -18,7 +18,7 @@ export default function AdminSidebar() {
   return (
     <aside className="w-60 bg-gray-900 flex flex-col">
       <div className="p-4 border-b border-gray-700 flex items-center gap-3">
-        <img src="/logo.png" alt="VendorApp" className="w-9 h-9 object-contain rounded-lg" />
+        <img src="/Logo.png" alt="VendorApp" className="w-9 h-9 object-contain rounded-lg" />
         <div>
           <div className="text-white font-bold text-lg leading-tight">VendorApp</div>
           <div className="text-xs text-gray-400">Admin Panel</div>

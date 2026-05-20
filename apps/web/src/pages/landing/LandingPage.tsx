@@ -86,7 +86,7 @@ export default function LandingPage() {
         <div className="flex items-center gap-3 pointer-events-auto">
           {/* Logo */}
           <div className="flex items-center gap-2 bg-dark-card/90 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg border border-dark-border">
-            <img src="/logo.png" alt="VendorApp" className="w-7 h-7 object-contain" />
+            <img src="/Logo.png" alt="VendorApp" className="w-7 h-7 object-contain" />
             <span className="text-primary font-bold text-base tracking-wider">VENDOR APP</span>
           </div>
 

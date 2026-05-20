@@ -34,7 +34,7 @@ export default function Login() {
 
         {/* Left panel — branding */}
         <div className="hidden md:flex flex-col items-center justify-center w-2/5 bg-gradient-to-b from-primary to-blue-800 p-10 gap-6">
-          <img src="/logo.png" alt="VendorApp" className="w-24 h-24 object-contain" />
+          <img src="/Logo.png" alt="VendorApp" className="w-24 h-24 object-contain" />
           <div className="text-center">
             <p className="text-white/60 text-sm font-medium tracking-widest uppercase mb-1">Selamat datang di</p>
             <h1 className="text-white font-bold text-2xl tracking-widest">VENDOR APP</h1>
@@ -49,7 +49,7 @@ export default function Login() {
         <div className="flex-1 flex flex-col justify-center p-8 md:p-12">
           {/* Mobile logo */}
           <div className="flex md:hidden justify-center mb-6">
-            <img src="/logo.png" alt="VendorApp" className="w-16 h-16 object-contain" />
+            <img src="/Logo.png" alt="VendorApp" className="w-16 h-16 object-contain" />
           </div>
 
           <h2 className="text-white font-bold text-2xl mb-1">Selamat datang di</h2>
