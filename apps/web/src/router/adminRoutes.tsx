@@ -7,12 +7,14 @@ import Users from '../pages/admin/Users'
 import Transactions from '../pages/admin/Transactions'
 import Disputes from '../pages/admin/Disputes'
 import Reports from '../pages/admin/Reports'
+import BankAccounts from '../pages/admin/BankAccounts'
 
 const adminRoutes = (
   <Route path="/x-ctrl-panel" element={<AdminLayout />}>
     <Route index element={<AdminDashboard />} />
     <Route path="verification" element={<Verification />} />
     <Route path="withdrawals" element={<AdminWithdrawals />} />
+    <Route path="bank-accounts" element={<BankAccounts />} />
     <Route path="users" element={<Users />} />
     <Route path="transactions" element={<Transactions />} />
     <Route path="disputes" element={<Disputes />} />

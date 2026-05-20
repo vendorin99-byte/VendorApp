@@ -5,6 +5,7 @@ const navItems = [
   { to: '/x-ctrl-panel', label: 'Dashboard', icon: '📊', end: true },
   { to: '/x-ctrl-panel/verification', label: 'Verifikasi Vendor', icon: '✅' },
   { to: '/x-ctrl-panel/withdrawals', label: 'Pencairan', icon: '💸' },
+  { to: '/x-ctrl-panel/bank-accounts', label: 'Rekening Bank', icon: '🏦' },
   { to: '/x-ctrl-panel/users', label: 'Manajemen User', icon: '👥' },
   { to: '/x-ctrl-panel/transactions', label: 'Transaksi', icon: '💳' },
   { to: '/x-ctrl-panel/disputes', label: 'Dispute', icon: '⚠️' },
