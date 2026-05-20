@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, StatusBar, FlatList } from 'react-native'
+import { formatRp } from '../../utils/currency'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -106,10 +107,41 @@ export default function HomeScreen() {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B5BDB" />}
         ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <Text style={[styles.listTitle, { color: textPrimary }]}>Rekomendasi Vendor</Text>
-            <Text style={[styles.listSub, { color: textSub }]}>{vendors.length} vendor ditemukan</Text>
-          </View>
+          <>
+            {/* Paket Tersedia */}
+            {vendors.some(v => v.services?.some((s: any) => s.is_active)) && (
+              <View style={styles.packageSection}>
+                <Text style={[styles.listTitle, { color: textPrimary }]}>📦 Paket Tersedia</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.packageRow}>
+                  {vendors.flatMap(v =>
+                    (v.services || [])
+                      .filter((s: any) => s.is_active)
+                      .map((s: any) => (
+                        <TouchableOpacity
+                          key={s.id}
+                          style={[styles.packageCard, { backgroundColor: cardBg }]}
+                          onPress={() => navigation.navigate('VendorDetail', { vendorId: v.id })}
+                        >
+                          <Text style={[styles.packageName, { color: textPrimary }]} numberOfLines={2}>{s.name}</Text>
+                          <TouchableOpacity onPress={() => navigation.navigate('VendorDetail', { vendorId: v.id })}>
+                            <Text style={styles.packageVendor} numberOfLines={1}>🏢 {v.business_name}</Text>
+                          </TouchableOpacity>
+                          <Text style={styles.packagePrice}>{formatRp(s.price)}</Text>
+                          {s.dp_percent && (
+                            <Text style={[styles.packageDP, { color: textSub }]}>DP {s.dp_percent}%</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))
+                  )}
+                </ScrollView>
+              </View>
+            )}
+
+            <View style={styles.listHeader}>
+              <Text style={[styles.listTitle, { color: textPrimary }]}>Rekomendasi Vendor</Text>
+              <Text style={[styles.listSub, { color: textSub }]}>{vendors.length} vendor ditemukan</Text>
+            </View>
+          </>
         }
         renderItem={({ item }) => (
           <VendorCard
@@ -165,4 +197,11 @@ const styles = StyleSheet.create({
   listSub: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 2 },
   empty: { alignItems: 'center', padding: 40 },
   emptyText: { fontFamily: 'Poppins_400Regular', fontSize: 15 },
+  packageSection: { marginBottom: 16 },
+  packageRow: { gap: 10, paddingVertical: 8 },
+  packageCard: { width: 160, borderRadius: 14, padding: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  packageName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, marginBottom: 6, lineHeight: 18 },
+  packageVendor: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: '#3B5BDB', marginBottom: 8 },
+  packagePrice: { fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#3B5BDB' },
+  packageDP: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 2 },
 })

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Share, StatusBar } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Share, StatusBar, Alert } from 'react-native'
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -29,9 +29,20 @@ export default function VendorDetailScreen() {
     api.get(`/vendors/${vendorId}`).then((r) => setVendor(r.data)).catch(() => {})
   }, [vendorId])
 
-  async function openChat() {
+  async function openChat(serviceHint?: string) {
     const r = await api.post('/chat/rooms', { vendor_id: vendorId })
-    navigation.navigate('ChatRoom', { roomId: r.data.id, vendorName: vendor.business_name, vendorId })
+    navigation.navigate('ChatRoom', { roomId: r.data.id, vendorName: vendor.business_name, vendorId, serviceHint })
+  }
+
+  function handleBookPress() {
+    Alert.alert(
+      '💬 Konsultasi Dulu',
+      'Disarankan chat dengan vendor terlebih dahulu untuk diskusikan ketersediaan tanggal, detail paket, dan kebutuhan spesifik Anda.',
+      [
+        { text: 'Chat Dulu', onPress: () => openChat() },
+        { text: 'Langsung Pesan', style: 'destructive', onPress: () => navigation.navigate('Booking', { vendorId }) },
+      ]
+    )
   }
 
   async function shareVendor() {
@@ -126,7 +137,11 @@ export default function VendorDetailScreen() {
             <View style={styles.section}>
               {activeServices.length === 0 && <Text style={[styles.empty, { color: subtext }]}>Belum ada layanan aktif</Text>}
               {activeServices.map((s: any) => (
-                <View key={s.id} style={[styles.serviceCard, { backgroundColor: card, borderColor: cardBorder }]}>
+                <TouchableOpacity
+                  key={s.id}
+                  style={[styles.serviceCard, { backgroundColor: card, borderColor: cardBorder }]}
+                  onPress={() => openChat(s.name)}
+                >
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.serviceName, { color: text }]}>{s.name}</Text>
                     {s.description && <Text style={[styles.serviceDesc, { color: subtext }]} numberOfLines={2}>{s.description}</Text>}
@@ -135,14 +150,10 @@ export default function VendorDetailScreen() {
                     {s.dp_percent && <Text style={[styles.serviceDuration, { color: subtext }]}>DP {s.dp_percent}% = {formatRp(Math.floor(s.price * s.dp_percent / 100))}</Text>}
                   </View>
                   <View style={styles.serviceActions}>
-                    <TouchableOpacity style={styles.chatSmallBtn} onPress={openChat}>
-                      <Text style={styles.chatSmallText}>💬</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.bookSmallBtn} onPress={() => navigation.navigate('Booking', { vendorId, serviceId: s.id })}>
-                      <Text style={styles.bookSmallText}>Pesan</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.chatSmallText}>💬</Text>
+                    <Text style={styles.chatTagText}>Chat →</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -177,10 +188,10 @@ export default function VendorDetailScreen() {
         <TouchableOpacity style={[styles.shareBtn, { borderColor: cardBorder }]} onPress={shareVendor}>
           <Text style={{ fontSize: 18 }}>🔗</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.chatBtn} onPress={openChat}>
+        <TouchableOpacity style={styles.chatBtn} onPress={() => openChat()}>
           <Text style={styles.chatBtnText}>💬 Konsultasi</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bookBtn} onPress={() => navigation.navigate('Booking', { vendorId })}>
+        <TouchableOpacity style={styles.bookBtn} onPress={handleBookPress}>
           <Text style={styles.bookBtnText}>📅 Pesan Sekarang</Text>
         </TouchableOpacity>
       </View>
@@ -238,11 +249,9 @@ const styles = StyleSheet.create({
   serviceDesc: { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 2 },
   serviceDuration: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 4 },
   servicePrice: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: '#3B5BDB', marginTop: 8 },
-  serviceActions: { alignItems: 'center', gap: 8, paddingTop: 4 },
-  chatSmallBtn: { width: 36, height: 36, borderRadius: 10, borderWidth: 1.5, borderColor: '#3B5BDB', alignItems: 'center', justifyContent: 'center' },
-  chatSmallText: { fontSize: 16 },
-  bookSmallBtn: { backgroundColor: '#3B5BDB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
-  bookSmallText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: '#fff' },
+  serviceActions: { alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 4, paddingLeft: 8 },
+  chatSmallText: { fontSize: 20 },
+  chatTagText: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, color: '#3B5BDB' },
   ratingBig: { alignItems: 'center', paddingVertical: 24, borderRadius: 14, marginBottom: 16 },
   ratingBigNum: { fontFamily: 'Poppins_700Bold', fontSize: 48 },
   stars: { fontSize: 20, marginTop: 4 },

@@ -33,7 +33,7 @@ export type RootStackParamList = {
   Booking: { vendorId: string; serviceId?: string }
   Payment: { bookingId: string; amount: number; method: string; vendorBank?: { bank_code: string; account_number: string; account_name: string } | null }
   OrderDetail: { bookingId: string }
-  ChatRoom: { roomId: string; vendorName: string; vendorId?: string }
+  ChatRoom: { roomId: string; vendorName: string; vendorId?: string; serviceHint?: string }
   EditProfile: undefined
   ChangePassword: undefined
   Affiliate: undefined
