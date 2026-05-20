@@ -56,6 +56,44 @@ router.post('/change-password', async (req, res) => {
 
 // ── Affiliate ────────────────────────────────────────────────────────────────
 
+router.post('/affiliate/withdraw', async (req, res) => {
+  const schema = z.object({
+    amount: z.number().min(50000, 'Minimal pencairan Rp 50.000'),
+    bank_code: z.string().min(2),
+    account_number: z.string().min(5),
+    account_name: z.string().min(3),
+  })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors[0].message })
+
+  const { amount, bank_code, account_number, account_name } = parsed.data
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('affiliate_balance')
+    .eq('id', req.user!.id)
+    .single()
+
+  if (!user || (user.affiliate_balance || 0) < amount)
+    return res.status(400).json({ error: 'Saldo affiliate tidak mencukupi' })
+
+  const { error: deductErr } = await supabase
+    .from('users')
+    .update({ affiliate_balance: (user.affiliate_balance || 0) - amount })
+    .eq('id', req.user!.id)
+
+  if (deductErr) return res.status(500).json({ error: 'Gagal memproses pencairan' })
+
+  await supabase.from('affiliate_transactions').insert({
+    user_id: req.user!.id,
+    amount,
+    type: 'withdraw',
+    description: `Pencairan ke ${bank_code} ${account_number} (${account_name})`,
+  })
+
+  res.json({ message: 'Pencairan berhasil diajukan, akan diproses dalam 1-3 hari kerja' })
+})
+
 router.get('/affiliate', async (req, res) => {
   const { data: user } = await supabase
     .from('users')

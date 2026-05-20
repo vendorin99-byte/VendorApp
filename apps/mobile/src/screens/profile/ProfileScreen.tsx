@@ -1,15 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar, Linking } from 'react-native'
+import { useNavigation, CommonActions } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '../../store/authStore'
 import { useTheme } from '../../hooks/useTheme'
-import { RootStackParamList } from '../../navigation'
-
-type Nav = NativeStackNavigationProp<RootStackParamList>
 
 export default function ProfileScreen() {
-  const navigation = useNavigation<Nav>()
+  const navigation = useNavigation()
   const { user, logout } = useAuthStore()
   const insets = useSafeAreaInsets()
   const { isDark, bg, card, cardBorder, text, subtext, divider, statusBar, statusBarBg, headerBg, headerBorder } = useTheme()
@@ -21,13 +17,15 @@ export default function ProfileScreen() {
     ])
   }
 
+  const goToPesanan = () => navigation.dispatch(CommonActions.navigate({ name: 'Pesanan' }))
+
   const MENU_ITEMS = [
-    { icon: '✏️', label: 'Edit Profil', onPress: () => navigation.navigate('EditProfile') },
-    { icon: '🔒', label: 'Ganti Password', onPress: () => navigation.navigate('ChangePassword') },
-    { icon: '🤝', label: 'Program Affiliate', onPress: () => navigation.navigate('Affiliate') },
-    { icon: '📋', label: 'Riwayat Pesanan', onPress: () => navigation.navigate('Pesanan' as any) },
-    { icon: '⭐', label: 'Ulasan Saya', onPress: () => navigation.navigate('Pesanan' as any) },
-    { icon: '📄', label: 'Syarat & Ketentuan', onPress: () => {} },
+    { icon: '✏️', label: 'Edit Profil', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'EditProfile' })) },
+    { icon: '🔒', label: 'Ganti Password', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'ChangePassword' })) },
+    { icon: '🤝', label: 'Program Affiliate', onPress: () => navigation.dispatch(CommonActions.navigate({ name: 'Affiliate' })) },
+    { icon: '📋', label: 'Riwayat Pesanan', onPress: goToPesanan },
+    { icon: '⭐', label: 'Ulasan Saya', onPress: goToPesanan },
+    { icon: '📄', label: 'Syarat & Ketentuan', onPress: () => Alert.alert('Syarat & Ketentuan', 'Dengan menggunakan VendorApp, Anda menyetujui bahwa:\n\n• Data pribadi diproses sesuai UU PDP\n• Transaksi dijamin escrow hingga selesai\n• Pembatalan dikenakan biaya sesuai kebijakan vendor\n• Vendor bertanggung jawab atas layanan yang diberikan\n\nHubungi support@vendorin.id untuk pertanyaan lebih lanjut.') },
   ]
 
   return (
@@ -39,7 +37,7 @@ export default function ProfileScreen() {
         </View>
         <Text style={[styles.name, { color: text }]}>{user?.name}</Text>
         <Text style={[styles.email, { color: subtext }]}>{user?.email}</Text>
-        <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
+        <TouchableOpacity style={styles.editBtn} onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'EditProfile' }))}>
           <Text style={styles.editBtnText}>Edit Profil</Text>
         </TouchableOpacity>
       </View>
