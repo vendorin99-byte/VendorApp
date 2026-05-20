@@ -36,8 +36,8 @@ export default function BookingScreen() {
   ]
 
   useEffect(() => {
-    api.get('/vendor/services').then((r) => {
-      const svc = r.data || []
+    api.get(`/vendors/${vendorId}`).then((r) => {
+      const svc = r.data.services || []
       setServices(svc.filter((s: any) => s.is_active))
       if (serviceId) setSelected(svc.find((s: any) => s.id === serviceId))
     }).catch(() => {})

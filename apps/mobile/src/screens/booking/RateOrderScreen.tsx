@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView,
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
+import { useTheme } from '../../hooks/useTheme'
 import api from '../../services/api'
 
 type Route = RouteProp<RootStackParamList, 'RateOrder'>
@@ -12,6 +13,7 @@ export default function RateOrderScreen() {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const { bookingId, vendorName } = route.params
+  const { bg, card, cardBorder, text, subtext, statusBar, statusBarBg } = useTheme()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,19 +33,24 @@ export default function RateOrderScreen() {
     }
   }
 
+  const ratingLabel = ['', 'Sangat Buruk 😞', 'Kurang Memuaskan 😕', 'Cukup 🙂', 'Bagus 😊', 'Luar Biasa! 🤩']
+
   return (
-    <ScrollView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.back}>← Kembali</Text></TouchableOpacity>
-        <Text style={styles.title}>Tulis Ulasan</Text>
+    <ScrollView style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={statusBar} backgroundColor={statusBarBg} />
+      <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: cardBorder }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ color: '#3B5BDB', fontSize: 14, fontFamily: 'Poppins_500Medium' }}>← Kembali</Text>
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: text }]}>Tulis Ulasan</Text>
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.vendorName}>{vendorName}</Text>
-        <Text style={styles.prompt}>Bagaimana pengalaman Anda dengan vendor ini?</Text>
+        <View style={[styles.vendorCard, { backgroundColor: card, borderColor: cardBorder }]}>
+          <Text style={[styles.vendorName, { color: text }]}>{vendorName}</Text>
+          <Text style={[styles.prompt, { color: subtext }]}>Bagaimana pengalaman Anda?</Text>
+        </View>
 
-        {/* Bintang */}
         <View style={styles.stars}>
           {[1, 2, 3, 4, 5].map((s) => (
             <TouchableOpacity key={s} onPress={() => setRating(s)}>
@@ -51,19 +58,15 @@ export default function RateOrderScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <Text style={styles.ratingLabel}>
-          {rating === 0 ? 'Ketuk bintang untuk memberi nilai' :
-           rating === 1 ? 'Sangat Buruk 😞' :
-           rating === 2 ? 'Kurang Memuaskan 😕' :
-           rating === 3 ? 'Cukup 🙂' :
-           rating === 4 ? 'Bagus 😊' : 'Luar Biasa! 🤩'}
+        <Text style={[styles.ratingLabel, { color: subtext }]}>
+          {rating === 0 ? 'Ketuk bintang untuk memberi nilai' : ratingLabel[rating]}
         </Text>
 
-        {/* Komentar */}
-        <Text style={styles.label}>Komentar (opsional)</Text>
+        <Text style={[styles.label, { color: subtext }]}>Komentar (opsional)</Text>
         <TextInput
-          style={styles.textarea}
+          style={[styles.textarea, { backgroundColor: card, borderColor: cardBorder, color: text }]}
           placeholder="Ceritakan pengalaman Anda dengan vendor ini..."
+          placeholderTextColor={subtext}
           value={comment}
           onChangeText={setComment}
           multiline
@@ -71,7 +74,7 @@ export default function RateOrderScreen() {
           textAlignVertical="top"
           maxLength={500}
         />
-        <Text style={styles.charCount}>{comment.length}/500</Text>
+        <Text style={[styles.charCount, { color: subtext }]}>{comment.length}/500</Text>
 
         <TouchableOpacity
           style={[styles.btn, (rating === 0 || loading) && styles.btnDisabled]}
@@ -86,21 +89,21 @@ export default function RateOrderScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderColor: '#E5E7EB' },
-  back: { color: '#3B5BDB', fontSize: 14, marginBottom: 8 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1 },
+  title: { fontFamily: 'Poppins_700Bold', fontSize: 20, marginTop: 8 },
   body: { padding: 24 },
-  vendorName: { fontSize: 18, fontWeight: 'bold', color: '#1F2937', textAlign: 'center', marginBottom: 4 },
-  prompt: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  vendorCard: { borderRadius: 14, padding: 16, marginBottom: 24, alignItems: 'center', borderWidth: 1 },
+  vendorName: { fontFamily: 'Poppins_700Bold', fontSize: 18, textAlign: 'center' },
+  prompt: { fontFamily: 'Poppins_400Regular', fontSize: 13, textAlign: 'center', marginTop: 4 },
   stars: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 8 },
-  star: { fontSize: 44, color: '#E5E7EB' },
+  star: { fontSize: 44, color: '#2A2A4A' },
   starActive: { color: '#F59E0B' },
-  ratingLabel: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24, height: 20 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  textarea: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 14, fontSize: 14, minHeight: 120 },
-  charCount: { fontSize: 12, color: '#9CA3AF', textAlign: 'right', marginTop: 4, marginBottom: 24 },
+  ratingLabel: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center', marginBottom: 24, height: 22 },
+  label: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, marginBottom: 8 },
+  textarea: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 14, minHeight: 120 },
+  charCount: { fontFamily: 'Poppins_400Regular', fontSize: 12, textAlign: 'right', marginTop: 4, marginBottom: 24 },
   btn: { backgroundColor: '#3B5BDB', borderRadius: 12, padding: 15, alignItems: 'center' },
-  btnDisabled: { backgroundColor: '#93C5FD' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnDisabled: { opacity: 0.5 },
+  btnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 16 },
 })

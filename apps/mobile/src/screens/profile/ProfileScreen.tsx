@@ -25,8 +25,8 @@ export default function ProfileScreen() {
     { icon: '✏️', label: 'Edit Profil', onPress: () => navigation.navigate('EditProfile') },
     { icon: '🔒', label: 'Ganti Password', onPress: () => navigation.navigate('ChangePassword') },
     { icon: '🤝', label: 'Program Affiliate', onPress: () => navigation.navigate('Affiliate') },
-    { icon: '📋', label: 'Riwayat Pesanan', onPress: () => {} },
-    { icon: '⭐', label: 'Ulasan Saya', onPress: () => {} },
+    { icon: '📋', label: 'Riwayat Pesanan', onPress: () => navigation.navigate('Pesanan' as any) },
+    { icon: '⭐', label: 'Ulasan Saya', onPress: () => navigation.navigate('Pesanan' as any) },
     { icon: '📄', label: 'Syarat & Ketentuan', onPress: () => {} },
   ]
 
