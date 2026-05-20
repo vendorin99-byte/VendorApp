@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../../navigation'
 import VendorCard from '../../components/VendorCard'
-import AdPopup from '../../components/AdPopup'
+import AdCard from '../../components/AdCard'
 import DarkLightToggle from '../../components/DarkLightToggle'
 import { useThemeStore } from '../../store/themeStore'
 import api from '../../services/api'
@@ -29,6 +29,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const { isDark } = useThemeStore()
   const [vendors, setVendors] = useState<any[]>([])
+  const [feedAds, setFeedAds] = useState<any[]>([])
+  const [searchAds, setSearchAds] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('Semua')
   const [refreshing, setRefreshing] = useState(false)
@@ -38,12 +40,22 @@ export default function HomeScreen() {
       const params: Record<string, string> = {}
       if (search) params.search = search
       if (category !== 'Semua') params.category = category
-      const { data } = await api.get('/vendors', { params })
-      setVendors(data.data || [])
+      const [vendorRes, adsRes] = await Promise.all([
+        api.get('/vendors', { params }),
+        api.get('/ads/feed?limit=5'),
+      ])
+      setVendors(vendorRes.data.data || [])
+      setFeedAds(adsRes.data || [])
     } catch {}
   }
 
   useEffect(() => { fetchVendors() }, [search, category])
+
+  // Fetch search ads saat keyword berubah
+  useEffect(() => {
+    if (!search) { setSearchAds([]); return }
+    api.get(`/ads/search?q=${encodeURIComponent(search)}`).then(r => setSearchAds(r.data || [])).catch(() => {})
+  }, [search])
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -59,7 +71,6 @@ export default function HomeScreen() {
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
       <StatusBar barStyle="light-content" backgroundColor="#3B5BDB" />
-      <AdPopup />
 
       {/* Blue header */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -137,18 +148,46 @@ export default function HomeScreen() {
               </View>
             )}
 
+            {/* Sponsored search results */}
+            {searchAds.length > 0 && (
+              <View style={styles.sponsoredSection}>
+                <Text style={[styles.sponsoredHeader, { color: textSub }]}>⚡ Hasil Disponsori</Text>
+                {searchAds.map(ad => (
+                  <AdCard
+                    key={ad.id}
+                    ad={ad}
+                    dark={isDark}
+                    onPress={() => navigation.navigate('VendorDetail', { vendorId: ad.vendors?.id })}
+                  />
+                ))}
+                <View style={styles.divider} />
+              </View>
+            )}
+
             <View style={styles.listHeader}>
-              <Text style={[styles.listTitle, { color: textPrimary }]}>Rekomendasi Vendor</Text>
+              <Text style={[styles.listTitle, { color: textPrimary }]}>
+                {search ? `Hasil untuk "${search}"` : 'Rekomendasi Vendor'}
+              </Text>
               <Text style={[styles.listSub, { color: textSub }]}>{vendors.length} vendor ditemukan</Text>
             </View>
           </>
         }
-        renderItem={({ item }) => (
-          <VendorCard
-            vendor={item}
-            dark={isDark}
-            onPress={() => navigation.navigate('VendorDetail', { vendorId: item.id })}
-          />
+        renderItem={({ item, index }) => (
+          <>
+            {/* Inject ad setiap 3 vendor */}
+            {index > 0 && index % 3 === 0 && feedAds[(index / 3 - 1) % feedAds.length] && (
+              <AdCard
+                ad={feedAds[(index / 3 - 1) % feedAds.length]}
+                dark={isDark}
+                onPress={() => navigation.navigate('VendorDetail', { vendorId: feedAds[(index / 3 - 1) % feedAds.length].vendors?.id })}
+              />
+            )}
+            <VendorCard
+              vendor={item}
+              dark={isDark}
+              onPress={() => navigation.navigate('VendorDetail', { vendorId: item.id })}
+            />
+          </>
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -204,4 +243,7 @@ const styles = StyleSheet.create({
   packageVendor: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: '#3B5BDB', marginBottom: 8 },
   packagePrice: { fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#3B5BDB' },
   packageDP: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 2 },
+  sponsoredSection: { marginBottom: 4 },
+  sponsoredHeader: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  divider: { height: 1, backgroundColor: '#E5E7EB', marginBottom: 16 },
 })

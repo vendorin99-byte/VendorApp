@@ -26,6 +26,9 @@ import adminTransactionRoutes from './routes/admin/transactions'
 import adminReportRoutes from './routes/admin/reports'
 import xenditWebhookRoutes from './routes/webhooks/xendit'
 import midtransWebhookRoutes from './routes/webhooks/midtrans'
+import vendorAdsRoutes from './routes/vendor/ads'
+import customerAdsRoutes from './routes/customer/ads'
+import adminAdsRoutes from './routes/admin/ads'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -63,6 +66,9 @@ app.use('/api/admin/transactions', adminTransactionRoutes)
 app.use('/api/admin/reports', adminReportRoutes)
 app.use('/api/webhooks/xendit', xenditWebhookRoutes)
 app.use('/api/webhooks/midtrans', midtransWebhookRoutes)
+app.use('/api/vendor/ads', vendorAdsRoutes)
+app.use('/api/ads', customerAdsRoutes)
+app.use('/api/admin/ads', adminAdsRoutes)
 
 app.listen(PORT, () => {
   console.log(`VendorIn backend running on port ${PORT}`)
