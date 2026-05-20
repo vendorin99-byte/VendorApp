@@ -11,11 +11,10 @@ router.get('/', async (req, res) => {
   let query = supabase
     .from('vendors')
     .select(`
-      id, business_name, category, sub_categories, city, lat, lng,
-      avg_rating, total_reviews, wallet_balance,
-      subscription, verified,
+      id, business_name, category, city,
+      avg_rating, total_reviews, verified,
       portfolios(image_url, sort_order),
-      services(id, name, price, is_active)
+      services(id, name, price, dp_percent, is_active)
     `)
     .eq('verified', true)
     .neq('is_active', false)
@@ -28,9 +27,12 @@ router.get('/', async (req, res) => {
   if (sort === 'price') query = query.order('services.price', { ascending: true })
 
   const { data, error, count } = await query
-  if (error) return res.status(500).json({ error: error.message })
+  if (error) {
+    console.error('[vendors] query error:', error.message, error.details)
+    return res.status(500).json({ error: error.message, details: error.details })
+  }
 
-  res.json({ data, total: count, page: parseInt(page as string), limit })
+  res.json({ data: data || [], total: count, page: parseInt(page as string), limit })
 })
 
 router.get('/:id', async (req, res) => {
