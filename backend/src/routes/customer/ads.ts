@@ -10,18 +10,15 @@ router.get('/feed', async (req, res) => {
   const { data } = await supabase
     .from('ads')
     .select(`
-      id, title, description, cost_per_click, target_keywords,
+      id, title, description, budget, spent, target_keywords,
       vendors(id, business_name, category, city, avg_rating, portfolios(image_url, sort_order)),
       services(id, name, price, dp_percent)
     `)
     .eq('status', 'active')
-    .gt('budget', supabase.rpc as any) // filter budget > spent handled below
     .limit(parseInt(limit as string) * 3)
 
-  // Filter: budget masih ada
-  const active = (data || []).filter((a: any) => {
-    return true // supabase doesn't support column comparison in where easily, filter client-side
-  })
+  // Filter: masih ada sisa budget
+  const active = (data || []).filter((a: any) => (a.budget || 0) > (a.spent || 0))
 
   // Shuffle dan ambil sesuai limit
   const shuffled = active.sort(() => Math.random() - 0.5).slice(0, parseInt(limit as string))
@@ -37,7 +34,7 @@ router.get('/search', async (req, res) => {
   const { data } = await supabase
     .from('ads')
     .select(`
-      id, title, description, cost_per_click, target_keywords,
+      id, title, description, budget, spent, target_keywords,
       vendors(id, business_name, category, city, avg_rating, portfolios(image_url, sort_order)),
       services(id, name, price, dp_percent)
     `)
@@ -56,38 +53,31 @@ router.get('/search', async (req, res) => {
   res.json(matched)
 })
 
-// Track klik iklan → deduct budget vendor
+// Track klik iklan → deduct budget
 router.post('/:id/click', async (req, res) => {
   const { data: ad } = await supabase
     .from('ads')
-    .select('*, vendors(wallet_balance)')
+    .select('id, budget, spent, clicks, vendor_id')
     .eq('id', req.params.id)
     .eq('status', 'active')
     .single()
 
   if (!ad) return res.status(404).json({ error: 'Ad not found' })
 
+  const costPerClick = 500 // Rp 500 per klik (fixed)
   const remaining = (ad.budget || 0) - (ad.spent || 0)
-  if (remaining < ad.cost_per_click) {
-    // Budget habis, matikan iklan
+
+  if (remaining < costPerClick) {
     await supabase.from('ads').update({ status: 'ended' }).eq('id', ad.id)
     return res.json({ clicked: false })
   }
 
-  // Deduct dari spent
-  await supabase.from('ads').update({ spent: (ad.spent || 0) + ad.cost_per_click }).eq('id', ad.id)
+  const newSpent = (ad.spent || 0) + costPerClick
+  const newClicks = (ad.clicks || 0) + 1
+  const updateData: any = { spent: newSpent, clicks: newClicks }
+  if (newSpent >= ad.budget) updateData.status = 'ended'
 
-  // Catat klik
-  await supabase.from('ad_clicks').insert({
-    ad_id: ad.id,
-    vendor_id: ad.vendor_id,
-    cost: ad.cost_per_click,
-  })
-
-  // Jika budget hampir habis, pause otomatis
-  if (remaining - ad.cost_per_click <= 0) {
-    await supabase.from('ads').update({ status: 'ended' }).eq('id', ad.id)
-  }
+  await supabase.from('ads').update(updateData).eq('id', ad.id)
 
   res.json({ clicked: true, vendor_id: ad.vendor_id })
 })

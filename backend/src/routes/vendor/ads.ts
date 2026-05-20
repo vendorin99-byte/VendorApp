@@ -13,9 +13,6 @@ const adSchema = z.object({
   service_id: z.string().uuid().optional(),
   target_keywords: z.array(z.string()).max(10).default([]),
   budget: z.number().min(50000, 'Budget minimal Rp 50.000'),
-  cost_per_click: z.number().min(500).default(500),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
 })
 
 // List iklan vendor
