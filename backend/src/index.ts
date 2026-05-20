@@ -25,6 +25,7 @@ import adminUserRoutes from './routes/admin/users'
 import adminTransactionRoutes from './routes/admin/transactions'
 import adminReportRoutes from './routes/admin/reports'
 import xenditWebhookRoutes from './routes/webhooks/xendit'
+import midtransWebhookRoutes from './routes/webhooks/midtrans'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -61,6 +62,7 @@ app.use('/api/admin/users', adminUserRoutes)
 app.use('/api/admin/transactions', adminTransactionRoutes)
 app.use('/api/admin/reports', adminReportRoutes)
 app.use('/api/webhooks/xendit', xenditWebhookRoutes)
+app.use('/api/webhooks/midtrans', midtransWebhookRoutes)
 
 app.listen(PORT, () => {
   console.log(`VendorIn backend running on port ${PORT}`)

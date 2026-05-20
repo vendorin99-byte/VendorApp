@@ -4,6 +4,7 @@ import { requireAuth } from '../../middlewares/auth'
 import { requireRole } from '../../middlewares/roleCheck'
 import { supabase } from '../../lib/supabase'
 import { creditWallet } from '../../services/wallet'
+import { coreApi } from '../../lib/midtrans'
 
 const router = Router()
 
@@ -77,6 +78,58 @@ router.post('/', requireAuth, requireRole('customer'), async (req, res) => {
       vendor_bank: bankInfo || null,
     },
   })
+})
+
+// ── Create QRIS Payment via Midtrans ─────────────────────────────────────────
+router.post('/:id/create-payment', requireAuth, requireRole('customer'), async (req, res) => {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('*, services(name)')
+    .eq('id', req.params.id)
+    .eq('customer_id', req.user!.id)
+    .single()
+
+  if (!booking) return res.status(404).json({ error: 'Booking not found' })
+  if (!['pending_dp', 'pending_remaining'].includes(booking.status)) {
+    return res.status(400).json({ error: 'Booking sudah dibayar atau tidak valid' })
+  }
+
+  const isRemaining = booking.status === 'pending_remaining'
+  const amount = isRemaining ? (booking.total_amount - booking.dp_amount) : booking.dp_amount
+  const paymentType = isRemaining ? 'remaining' : (booking.payment_method === 'lunas' ? 'full' : 'dp')
+  const orderId = `BOOK-${booking.id.slice(0, 8)}-${Date.now()}`
+
+  try {
+    const charge = await coreApi.charge({
+      payment_type: 'qris',
+      transaction_details: { order_id: orderId, gross_amount: amount },
+      qris: { acquirer: 'gopay' },
+    })
+
+    const qrString = (charge as any).qr_string
+
+    await supabase.from('transactions')
+      .update({ tripay_reference: orderId })
+      .eq('booking_id', booking.id)
+      .eq('type', paymentType)
+
+    res.json({ qr_string: qrString, order_id: orderId, amount })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Gagal membuat QRIS' })
+  }
+})
+
+// ── Cek status pembayaran ─────────────────────────────────────────────────────
+router.get('/:id/payment-status', requireAuth, requireRole('customer'), async (req, res) => {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('id, status')
+    .eq('id', req.params.id)
+    .eq('customer_id', req.user!.id)
+    .single()
+
+  if (!booking) return res.status(404).json({ error: 'Not found' })
+  res.json({ status: booking.status })
 })
 
 // ── Simulasi Pembayaran (tanpa Xendit, untuk prototype) ──────────────────────
