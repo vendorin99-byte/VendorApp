@@ -14,8 +14,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList>
 const TABS = ['Aktif', 'Selesai', 'Dibatalkan']
 
 const STATUS_MAP: Record<string, string[]> = {
-  Aktif: ['pending_dp', 'dp_paid', 'confirmed', 'in_progress', 'pending_remaining', 'fully_paid'],
-  Selesai: ['done'],
+  Aktif: ['pending_dp', 'dp_paid', 'confirmed', 'in_progress', 'pending_remaining'],
+  Selesai: ['fully_paid', 'done'],
   Dibatalkan: ['cancelled'],
 }
 
