@@ -62,6 +62,29 @@ router.post('/', requireAuth, requireRole('customer'), async (req, res) => {
   res.status(201).json(data)
 })
 
+// PATCH edit request sendiri (customer)
+router.patch('/:id', requireAuth, requireRole('customer'), async (req, res) => {
+  const { category, description, event_date, budget } = req.body
+  if (description !== undefined && (typeof description !== 'string' || description.trim().length < 10)) {
+    return res.status(400).json({ error: 'Deskripsi minimal 10 karakter' })
+  }
+
+  const { error } = await supabase
+    .from('map_requests')
+    .update({
+      ...(category !== undefined && { category }),
+      ...(description !== undefined && { description: description.trim() }),
+      ...(event_date !== undefined && { event_date: event_date || null }),
+      ...(budget !== undefined && { budget: budget || null }),
+    })
+    .eq('id', req.params.id)
+    .eq('customer_id', req.user!.id)
+    .eq('status', 'open')
+
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ success: true })
+})
+
 // DELETE tutup request sendiri (customer)
 router.delete('/:id', requireAuth, requireRole('customer'), async (req, res) => {
   const { error } = await supabase
