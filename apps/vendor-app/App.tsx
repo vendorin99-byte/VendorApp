@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -14,7 +14,7 @@ export default function App() {
     Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold,
   })
   const [showBanner, setShowBanner] = useState(false)
-  const translateY = new Animated.Value(-80)
+  const translateY = useRef(new Animated.Value(-80)).current
 
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync()
