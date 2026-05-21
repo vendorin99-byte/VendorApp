@@ -2,7 +2,8 @@ import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api',
+  baseURL: 'https://vendorin-backend.onrender.com/api',
+  timeout: 35000,
 })
 
 api.interceptors.request.use((config) => {
@@ -10,5 +11,22 @@ api.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
+
+// Auto-retry sekali jika timeout atau network error (untuk Render cold start)
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const config = err.config
+    if (!config || config.__retried) return Promise.reject(err)
+    const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout')
+    const isNetwork = !err.response
+    if (isTimeout || isNetwork) {
+      config.__retried = true
+      await new Promise((r) => setTimeout(r, 3000))
+      return api(config)
+    }
+    return Promise.reject(err)
+  }
+)
 
 export default api

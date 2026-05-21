@@ -64,13 +64,17 @@ export default function HomeScreen() {
   const cardBg = isDark ? '#1A1A2E' : '#fff'
   const textPrimary = isDark ? '#fff' : '#1F2937'
   const textSub = isDark ? '#9CA3AF' : '#6B7280'
+  const headerBg = isDark ? '#0D0D1A' : '#3B5BDB'
+  const searchBg = isDark ? '#1A1A2E' : '#fff'
+  const searchBorder = isDark ? '#2A2A4A' : 'transparent'
+  const searchTextColor = isDark ? '#fff' : '#1F2937'
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#3B5BDB" />
+      <StatusBar barStyle="light-content" backgroundColor={headerBg} />
 
-      {/* Blue header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: headerBg }]}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>Temukan Jasa Terbaik{'\n'}untuk Acara Anda</Text>
@@ -78,11 +82,11 @@ export default function HomeScreen() {
           <DarkLightToggle />
         </View>
 
-        {/* Search inputs */}
-        <View style={styles.searchBox}>
+        {/* Search */}
+        <View style={[styles.searchBox, { backgroundColor: searchBg, borderColor: searchBorder, borderWidth: 1 }]}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: searchTextColor }]}
             placeholder="Cari jasa EO, Sewa Mobil..."
             placeholderTextColor="#9CA3AF"
             value={search}
@@ -93,18 +97,19 @@ export default function HomeScreen() {
 
         {/* Category circles */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
-          {CATEGORIES.map((c) => (
-            <TouchableOpacity
-              key={c.key}
-              style={styles.catItem}
-              onPress={() => setCategory(c.key)}
-            >
-              <View style={[styles.catCircle, category === c.key && styles.catCircleActive]}>
-                <Text style={styles.catIcon}>{c.icon}</Text>
-              </View>
-              <Text style={styles.catLabel}>{c.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {CATEGORIES.map((c) => {
+            const isActive = category === c.key
+            const circleActiveBg = isDark ? '#3B5BDB' : '#fff'
+            const circleInactiveBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.2)'
+            return (
+              <TouchableOpacity key={c.key} style={styles.catItem} onPress={() => setCategory(c.key)}>
+                <View style={[styles.catCircle, { backgroundColor: isActive ? circleActiveBg : circleInactiveBg }]}>
+                  <Text style={styles.catIcon}>{c.icon}</Text>
+                </View>
+                <Text style={[styles.catLabel, { color: isActive ? '#fff' : isDark ? '#9CA3AF' : 'rgba(255,255,255,0.8)' }]}>{c.label}</Text>
+              </TouchableOpacity>
+            )
+          })}
         </ScrollView>
       </View>
 
@@ -116,11 +121,30 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B5BDB" />}
         ListHeaderComponent={
           <>
-            {/* Paket Tersedia */}
-            {vendors.some(v => v.services?.some((s: any) => s.is_active)) && (
+            {/* Paket Tersedia + Sponsor (digabung) */}
+            {(vendors.some(v => v.services?.some((s: any) => s.is_active)) || feedAds.length > 0) && (
               <View style={styles.packageSection}>
                 <Text style={[styles.listTitle, { color: textPrimary }]}>📦 Paket Tersedia</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.packageRow}>
+                  {/* Ad sponsor cards */}
+                  {feedAds.map((ad: any) => (
+                    <TouchableOpacity
+                      key={`ad-${ad.id}`}
+                      style={[styles.packageCard, styles.packageCardSponsor, { backgroundColor: cardBg }]}
+                      onPress={() => {
+                        api.post(`/ads/${ad.id}/click`).catch(() => {})
+                        navigation.navigate('VendorDetail', { vendorId: ad.vendors?.id })
+                      }}
+                    >
+                      <View style={styles.sponsorBadge}>
+                        <Text style={styles.sponsorBadgeText}>⚡ Sponsor</Text>
+                      </View>
+                      <Text style={[styles.packageName, { color: textPrimary }]} numberOfLines={2}>{ad.title}</Text>
+                      <Text style={styles.packageVendor} numberOfLines={1}>🏢 {ad.vendors?.business_name}</Text>
+                      {ad.services?.price && <Text style={styles.packagePrice}>{formatRp(ad.services.price)}</Text>}
+                    </TouchableOpacity>
+                  ))}
+                  {/* Regular package cards */}
                   {vendors.flatMap(v =>
                     (v.services || [])
                       .filter((s: any) => s.is_active)
@@ -131,9 +155,7 @@ export default function HomeScreen() {
                           onPress={() => navigation.navigate('VendorDetail', { vendorId: v.id })}
                         >
                           <Text style={[styles.packageName, { color: textPrimary }]} numberOfLines={2}>{s.name}</Text>
-                          <TouchableOpacity onPress={() => navigation.navigate('VendorDetail', { vendorId: v.id })}>
-                            <Text style={styles.packageVendor} numberOfLines={1}>🏢 {v.business_name}</Text>
-                          </TouchableOpacity>
+                          <Text style={styles.packageVendor} numberOfLines={1}>🏢 {v.business_name}</Text>
                           <Text style={styles.packagePrice}>{formatRp(s.price)}</Text>
                           {s.dp_percent && (
                             <Text style={[styles.packageDP, { color: textSub }]}>DP {s.dp_percent}%</Text>
@@ -169,22 +191,12 @@ export default function HomeScreen() {
             </View>
           </>
         }
-        renderItem={({ item, index }) => (
-          <>
-            {/* Inject ad setiap 3 vendor */}
-            {index > 0 && index % 3 === 0 && feedAds[(index / 3 - 1) % feedAds.length] && (
-              <AdCard
-                ad={feedAds[(index / 3 - 1) % feedAds.length]}
-                dark={isDark}
-                onPress={() => navigation.navigate('VendorDetail', { vendorId: feedAds[(index / 3 - 1) % feedAds.length].vendors?.id })}
-              />
-            )}
-            <VendorCard
-              vendor={item}
-              dark={isDark}
-              onPress={() => navigation.navigate('VendorDetail', { vendorId: item.id })}
-            />
-          </>
+        renderItem={({ item }) => (
+          <VendorCard
+            vendor={item}
+            dark={isDark}
+            onPress={() => navigation.navigate('VendorDetail', { vendorId: item.id })}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -198,7 +210,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { backgroundColor: '#3B5BDB', paddingHorizontal: 20, paddingBottom: 20 },
+  header: { paddingHorizontal: 20, paddingBottom: 20 },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
   headerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#fff', lineHeight: 32 },
   searchBox: {
@@ -236,10 +248,13 @@ const styles = StyleSheet.create({
   packageSection: { marginBottom: 16 },
   packageRow: { gap: 10, paddingVertical: 8 },
   packageCard: { width: 160, borderRadius: 14, padding: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  packageCardSponsor: { borderWidth: 1.5, borderColor: '#F59E0B' },
   packageName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, marginBottom: 6, lineHeight: 18 },
   packageVendor: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: '#3B5BDB', marginBottom: 8 },
   packagePrice: { fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#3B5BDB' },
   packageDP: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 2 },
+  sponsorBadge: { backgroundColor: '#FEF3C7', alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginBottom: 8 },
+  sponsorBadgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 9, color: '#92400E' },
   sponsoredSection: { marginBottom: 4 },
   sponsoredHeader: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   divider: { height: 1, backgroundColor: '#E5E7EB', marginBottom: 16 },
