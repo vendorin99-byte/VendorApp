@@ -21,6 +21,7 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen'
 import NotificationsScreen from '../screens/profile/NotificationsScreen'
 import VendorAdsScreen from '../screens/vendor-mobile/VendorAdsScreen'
+import LocationPickerScreen from '../screens/vendor-mobile/LocationPickerScreen'
 
 export type RootStackParamList = {
   Splash: undefined
@@ -42,6 +43,7 @@ export type RootStackParamList = {
   RateOrder: { bookingId: string; vendorName: string }
   Notifications: undefined
   VendorAds: undefined
+  LocationPicker: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -84,6 +86,7 @@ export default function RootNavigator() {
           <Stack.Screen name="RateOrder" component={RateOrderScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="VendorAds" component={VendorAdsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="LocationPicker" component={LocationPickerScreen} options={{ headerShown: false }} />
         </>
       )}
     </Stack.Navigator>
