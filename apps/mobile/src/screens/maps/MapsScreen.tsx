@@ -59,6 +59,13 @@ export default function MapsScreen() {
   const [myBidsLoading, setMyBidsLoading] = useState(false)
   const [acceptingBidId, setAcceptingBidId] = useState<string | null>(null)
 
+  // Edit request
+  const [editDesc, setEditDesc] = useState('')
+  const [editCat, setEditCat] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editBudget, setEditBudget] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+
   useEffect(() => {
     async function init() {
       const timeout = setTimeout(() => setLocationReady(true), 4000)
@@ -148,6 +155,10 @@ export default function MapsScreen() {
 
   async function openMyRequest(req: any) {
     setMyRequest(req)
+    setEditDesc(req.description || '')
+    setEditCat(req.category || REQ_CATEGORIES[0])
+    setEditDate(req.event_date || '')
+    setEditBudget(req.budget ? String(req.budget) : '')
     setMyRequestBids([])
     setMyBidsLoading(true)
     try {
@@ -155,6 +166,26 @@ export default function MapsScreen() {
       setMyRequestBids(data || [])
     } catch {}
     setMyBidsLoading(false)
+  }
+
+  async function saveMyRequest() {
+    if (!myRequest || !editDesc.trim()) return Alert.alert('Error', 'Deskripsi wajib diisi')
+    setEditSaving(true)
+    try {
+      await api.patch(`/map-requests/${myRequest.id}`, {
+        category: editCat,
+        description: editDesc.trim(),
+        event_date: editDate || undefined,
+        budget: editBudget ? parseInt(editBudget) : undefined,
+      })
+      fetchRequests()
+      setMyRequest(null)
+      Alert.alert('✅ Tersimpan', 'Permintaan Anda sudah diperbarui di peta.')
+    } catch (e: any) {
+      Alert.alert('Gagal', e.response?.data?.error || 'Coba lagi')
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   async function deleteMyRequest() {
@@ -248,15 +279,18 @@ export default function MapsScreen() {
           userLat={location?.lat}
           userLng={location?.lng}
           radiusKm={parseInt(radius.replace('km', ''))}
+          userId={user?.id || ''}
+          isVendor={isVendor}
           onVendorPress={(id) => navigation.navigate('VendorDetail', { vendorId: id })}
           onPromoPress={(vendorId, promoText) => setActivePromo({ vendorId, text: promoText })}
           onRequestPress={(id, description, category, eventDate, budget) => {
-            const req = requests.find(r => r.id === id)
-            if (!isVendor && req?.customer_id === user?.id) {
-              openMyRequest(req)
-            } else if (isVendor) {
-              setActiveBidRequest({ id, description, category, eventDate, budget })
-            }
+            if (isVendor) setActiveBidRequest({ id, description, category, eventDate, budget })
+          }}
+          onMyRequestPress={(id, description, category, eventDate, budget) => {
+            const fromState = requests.find(r => r.id === id)
+            if (fromState && fromState.customer_id && fromState.customer_id !== user?.id) return
+            const req = fromState ?? { id, description, category, event_date: eventDate || null, budget: budget || null }
+            openMyRequest(req)
           }}
           style={{ flex: 1 }}
         />
@@ -378,39 +412,84 @@ export default function MapsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── Modal: Customer lihat request sendiri + bids ───────────────── */}
+      {/* ── Modal: Customer lihat + edit request sendiri + bids ──────── */}
       <Modal visible={!!myRequest} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: card }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <Text style={[styles.modalTitle, { color: text }]}>🙋 Permintaan Saya</Text>
               <TouchableOpacity onPress={deleteMyRequest}>
-                <Text style={{ color: '#EF4444', fontFamily: 'Poppins_600SemiBold', fontSize: 13 }}>Hapus</Text>
+                <Text style={{ color: '#EF4444', fontFamily: 'Poppins_600SemiBold', fontSize: 13 }}>🗑 Hapus</Text>
               </TouchableOpacity>
             </View>
 
-            {myRequest && (
-              <View style={[styles.requestPreview, { backgroundColor: isDark ? '#0D0D1A' : '#F0FDF4', marginBottom: 12 }]}>
-                <Text style={[styles.requestPreviewCat, { color: '#0D9488' }]}>{myRequest.category}</Text>
-                <Text style={[styles.requestPreviewDesc, { color: text }]}>{myRequest.description}</Text>
-                {myRequest.event_date ? <Text style={[styles.requestPreviewMeta, { color: subtext }]}>📅 {myRequest.event_date}</Text> : null}
-                {myRequest.budget ? <Text style={[styles.requestPreviewMeta, { color: subtext }]}>💰 Budget {formatRp(myRequest.budget)}</Text> : null}
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 480 }}>
+              {/* Edit form */}
+              <Text style={[styles.label, { color: text, marginTop: 0 }]}>Kategori Jasa</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4, marginBottom: 10 }}>
+                {REQ_CATEGORIES.map(c => (
+                  <TouchableOpacity key={c} style={[styles.catChip, editCat === c && styles.catChipActive]} onPress={() => setEditCat(c)}>
+                    <Text style={[styles.catChipText, editCat === c && { color: '#fff' }]}>{c}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={[styles.label, { color: text }]}>Deskripsi</Text>
+              <TextInput
+                style={[styles.input, styles.inputMulti, { backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB', color: text, borderColor: cardBorder }]}
+                value={editDesc}
+                onChangeText={setEditDesc}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor={subtext}
+              />
+
+              <View style={styles.row2}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, { color: text }]}>Tanggal Acara</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB', color: text, borderColor: cardBorder }]}
+                    placeholder="2026-06-15"
+                    placeholderTextColor={subtext}
+                    value={editDate}
+                    onChangeText={setEditDate}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, { color: text }]}>Budget (Rp)</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB', color: text, borderColor: cardBorder }]}
+                    placeholder="5000000"
+                    placeholderTextColor={subtext}
+                    value={editBudget}
+                    onChangeText={setEditBudget}
+                    keyboardType="numeric"
+                  />
+                </View>
               </View>
-            )}
 
-            <Text style={[styles.label, { color: text, marginTop: 0 }]}>
-              💼 Penawaran Masuk {myBidsLoading ? '...' : `(${myRequestBids.length})`}
-            </Text>
+              <View style={styles.modalBtns}>
+                <TouchableOpacity style={styles.cancelBtn2} onPress={() => setMyRequest(null)}>
+                  <Text style={[styles.cancelBtn2Text, { color: subtext }]}>Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.submitBtn, editSaving && { opacity: 0.6 }]} onPress={saveMyRequest} disabled={editSaving}>
+                  <Text style={styles.submitBtnText}>{editSaving ? 'Menyimpan...' : '💾 Simpan'}</Text>
+                </TouchableOpacity>
+              </View>
 
-            {myBidsLoading ? (
-              <ActivityIndicator color="#3B5BDB" style={{ marginVertical: 16 }} />
-            ) : myRequestBids.length === 0 ? (
-              <Text style={[styles.modalSub, { color: subtext, textAlign: 'center', marginVertical: 12 }]}>
-                Belum ada penawaran masuk. Vendor terdekat akan melihat permintaan Anda.
+              {/* Bids section */}
+              <Text style={[styles.label, { color: text, marginTop: 16 }]}>
+                💼 Penawaran Masuk {myBidsLoading ? '...' : `(${myRequestBids.length})`}
               </Text>
-            ) : (
-              <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
-                {myRequestBids.map((bid) => (
+
+              {myBidsLoading ? (
+                <ActivityIndicator color="#3B5BDB" style={{ marginVertical: 16 }} />
+              ) : myRequestBids.length === 0 ? (
+                <Text style={[styles.modalSub, { color: subtext, textAlign: 'center', marginVertical: 12 }]}>
+                  Belum ada penawaran masuk. Vendor terdekat akan melihat permintaan Anda.
+                </Text>
+              ) : (
+                myRequestBids.map((bid) => (
                   <View key={bid.id} style={[styles.bidCard, { backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB', borderColor: cardBorder }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <View style={{ flex: 1 }}>
@@ -436,13 +515,9 @@ export default function MapsScreen() {
                       </View>
                     )}
                   </View>
-                ))}
-              </ScrollView>
-            )}
-
-            <TouchableOpacity style={[styles.cancelBtn2, { marginTop: 12, borderColor: cardBorder }]} onPress={() => setMyRequest(null)}>
-              <Text style={[styles.cancelBtn2Text, { color: subtext }]}>Tutup</Text>
-            </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>

@@ -26,6 +26,7 @@ interface MapRequest {
   description: string
   event_date?: string
   budget?: number
+  customer_id?: string
   users?: { name: string }
 }
 
@@ -36,10 +37,13 @@ interface Props {
   userLat?: number
   userLng?: number
   radiusKm?: number
+  userId?: string
+  isVendor?: boolean
   mode?: 'view' | 'pick-location'
   onVendorPress?: (id: string) => void
   onPromoPress?: (vendorId: string, promoText: string) => void
   onRequestPress?: (requestId: string, description: string, category: string, eventDate: string, budget: number) => void
+  onMyRequestPress?: (requestId: string, description: string, category: string, eventDate: string, budget: number) => void
   onLocationPicked?: (lat: number, lng: number) => void
   flyTo?: { lat: number; lng: number } | null
   style?: object
@@ -61,8 +65,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function LeafletMap({
   vendors, promos = [], requests = [],
   userLat = -6.2, userLng = 106.8, radiusKm = 10,
+  userId = '',
+  isVendor = false,
   mode = 'view',
-  onVendorPress, onPromoPress, onRequestPress, onLocationPicked,
+  onVendorPress, onPromoPress, onRequestPress, onMyRequestPress, onLocationPicked,
   flyTo,
   style,
 }: Props) {
@@ -109,6 +115,7 @@ export default function LeafletMap({
     eventDate: r.event_date || '',
     budget: r.budget || 0,
     customerName: r.users?.name || 'Customer',
+    customerId: r.customer_id || '',
   })))
 
   const html = `<!DOCTYPE html>
@@ -137,6 +144,8 @@ export default function LeafletMap({
   <div id="map"></div>
   ${mode === 'pick-location' ? '<div class="pick-hint">📍 Tap peta untuk pilih lokasi</div>' : ''}
   <script>
+    var currentUserId = '${userId}';
+    var isVendorUser = ${isVendor};
     var map = L.map('map', { zoomControl: true }).setView([${userLat}, ${userLng}], 14);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
@@ -207,12 +216,22 @@ export default function LeafletMap({
       var metaLine = '';
       if(r.eventDate) metaLine += '📅 '+r.eventDate+'  ';
       if(r.budget) metaLine += '💰 Rp'+r.budget.toLocaleString();
+      var isMyReq = currentUserId && r.customerId === currentUserId;
+      var msgData = '{type:\\'+(isVendorUser?'request':'my_request')+'\\',' +
+        'id:\\''+r.id+'\\',' +
+        'description:'+JSON.stringify(r.description)+',' +
+        'category:\\''+r.category+'\\',' +
+        'eventDate:\\''+r.eventDate+'\\',' +
+        'budget:'+r.budget+'}';
+      var btnHtml = isVendorUser
+        ? '<button class="popup-btn btn-teal" style="margin-top:8px" onclick="window.ReactNativeWebView.postMessage(JSON.stringify('+msgData+'))">💼 Kirim Penawaran</button>'
+        : '<button class="popup-btn" style="margin-top:8px;background:#6366F1" onclick="window.ReactNativeWebView.postMessage(JSON.stringify('+msgData+'))">📋 Kelola / Hapus Permintaan</button>';
       L.marker([r.lat, r.lng], { icon: reqIcon }).addTo(map).bindPopup(
-        '<div class="popup-name">'+r.customerName+'</div>' +
+        '<div class="popup-name">'+(isMyReq?'🙋 Permintaan Saya':r.customerName)+'</div>' +
         (r.category ? '<div class="popup-cat">Butuh: '+r.category+'</div>' : '') +
         '<div class="popup-desc">'+r.description+'</div>' +
         (metaLine ? '<div class="popup-meta">'+metaLine+'</div>' : '') +
-        '<button class="popup-btn btn-teal" style="margin-top:8px" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'request\\',id:r.id,description:r.description,category:r.category,eventDate:r.eventDate,budget:r.budget}))">💼 Kirim Penawaran</button>'
+        btnHtml
       );
     });
     ` : `
@@ -244,6 +263,7 @@ export default function LeafletMap({
       if (msg.type === 'vendor') onVendorPress?.(msg.id)
       else if (msg.type === 'promo') onPromoPress?.(msg.vendorId, msg.text)
       else if (msg.type === 'request') onRequestPress?.(msg.id, msg.description, msg.category, msg.eventDate, msg.budget)
+      else if (msg.type === 'my_request') onMyRequestPress?.(msg.id, msg.description, msg.category, msg.eventDate, msg.budget)
       else if (msg.type === 'location_picked') onLocationPicked?.(msg.lat, msg.lng)
     } catch {
       // legacy string message from old vendor press

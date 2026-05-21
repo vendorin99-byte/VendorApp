@@ -111,6 +111,15 @@ export default function LandingPage() {
   const [bidSubmitting, setBidSubmitting] = useState(false)
   const [bidDone, setBidDone] = useState(false)
 
+  // My request modal (customer CRUD)
+  const [myReqModal, setMyReqModal] = useState<any>(null)
+  const [editDesc, setEditDesc] = useState('')
+  const [editCat, setEditCat] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editBudget, setEditBudget] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editDeleting, setEditDeleting] = useState(false)
+
   useEffect(() => {
     api.get('/map-promos/active').then(r => setPromos(r.data || [])).catch(() => {})
     api.get('/map-requests/active').then(r => setRequests(r.data || [])).catch(() => {})
@@ -158,6 +167,47 @@ export default function LandingPage() {
       alert(e.response?.data?.error || 'Gagal mengirim penawaran')
     } finally {
       setBidSubmitting(false)
+    }
+  }
+
+  function openMyReq(req: any) {
+    setMyReqModal(req)
+    setEditDesc(req.description || '')
+    setEditCat(req.category || 'EO')
+    setEditDate(req.event_date || '')
+    setEditBudget(req.budget ? String(req.budget) : '')
+  }
+
+  async function saveMyReq() {
+    if (!myReqModal || !editDesc.trim()) return
+    setEditSaving(true)
+    try {
+      await api.patch(`/map-requests/${myReqModal.id}`, {
+        category: editCat,
+        description: editDesc.trim(),
+        event_date: editDate || undefined,
+        budget: editBudget ? parseInt(editBudget) : undefined,
+      })
+      setMyReqModal(null)
+      api.get('/map-requests/active').then(r => setRequests(r.data || [])).catch(() => {})
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Gagal menyimpan')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  async function deleteMyReq() {
+    if (!myReqModal || !window.confirm('Hapus permintaan ini dari peta?')) return
+    setEditDeleting(true)
+    try {
+      await api.delete(`/map-requests/${myReqModal.id}`)
+      setMyReqModal(null)
+      api.get('/map-requests/active').then(r => setRequests(r.data || [])).catch(() => {})
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Gagal menghapus')
+    } finally {
+      setEditDeleting(false)
     }
   }
 
@@ -225,26 +275,38 @@ export default function LandingPage() {
         ))}
 
         {/* Request pins */}
-        {requests.filter((r) => r.lat && r.lng).map((r) => (
-          <Marker key={r.id} position={[r.lat, r.lng]} icon={makeRequestIcon()}>
-            <Popup>
-              <div className="p-1 min-w-[200px]">
-                <div className="inline-block bg-teal-100 text-teal-700 text-xs font-bold px-2 py-0.5 rounded mb-1.5">
-                  🙋 {r.category || 'Umum'}
+        {requests.filter((r) => r.lat && r.lng).map((r) => {
+          const isMyReq = user && !isVendor && r.customer_id === user.id
+          return (
+            <Marker key={r.id} position={[r.lat, r.lng]} icon={makeRequestIcon()}>
+              <Popup>
+                <div className="p-1 min-w-[200px]">
+                  <div className="inline-block bg-teal-100 text-teal-700 text-xs font-bold px-2 py-0.5 rounded mb-1.5">
+                    {isMyReq ? '🙋 Permintaan Saya' : `🙋 ${r.category || 'Umum'}`}
+                  </div>
+                  <p className="text-sm text-gray-800 leading-snug mb-1.5">{r.description}</p>
+                  {r.event_date && <p className="text-xs text-gray-500">📅 {r.event_date}</p>}
+                  {r.budget && <p className="text-xs text-gray-500">💰 Budget {formatRp(r.budget)}</p>}
+                  {isMyReq ? (
+                    <button
+                      onClick={() => openMyReq(r)}
+                      className="mt-2 w-full text-center text-xs bg-indigo-600 text-white rounded py-1.5 font-medium hover:bg-indigo-700 transition-colors"
+                    >
+                      📋 Kelola / Hapus Permintaan
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => openBid(r)}
+                      className="mt-2 w-full text-center text-xs bg-teal-600 text-white rounded py-1.5 font-medium hover:bg-teal-700 transition-colors"
+                    >
+                      {isVendor ? '💼 Kirim Penawaran' : '🔑 Login untuk Menawar'}
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm text-gray-800 leading-snug mb-1.5">{r.description}</p>
-                {r.event_date && <p className="text-xs text-gray-500">📅 {r.event_date}</p>}
-                {r.budget && <p className="text-xs text-gray-500">💰 Budget {formatRp(r.budget)}</p>}
-                <button
-                  onClick={() => openBid(r)}
-                  className="mt-2 w-full text-center text-xs bg-teal-600 text-white rounded py-1.5 font-medium hover:bg-teal-700 transition-colors"
-                >
-                  {isVendor ? '💼 Kirim Penawaran' : '🔑 Login untuk Menawar'}
-                </button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+              </Popup>
+            </Marker>
+          )
+        })}
       </MapContainer>
 
       {/* Overlay */}
@@ -393,6 +455,86 @@ export default function LandingPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Customer kelola request sendiri ── */}
+      {myReqModal && (
+        <div className="fixed inset-0 bg-black/60 z-[2000] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 text-lg">🙋 Permintaan Saya</h3>
+                <button
+                  onClick={deleteMyReq}
+                  disabled={editDeleting}
+                  className="text-red-500 hover:text-red-700 text-sm font-semibold disabled:opacity-50"
+                >
+                  {editDeleting ? 'Menghapus...' : '🗑 Hapus'}
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Kategori</label>
+                <div className="flex flex-wrap gap-2">
+                  {['EO', 'Fotografer', 'Wedding', 'Katering', 'Dekorasi', 'Sewa Mobil', 'Musik', 'Lainnya'].map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setEditCat(c)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${editCat === c ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Deskripsi *</label>
+                <textarea
+                  rows={3}
+                  value={editDesc}
+                  onChange={e => setEditDesc(e.target.value)}
+                  className={inputCls + ' resize-none'}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Tanggal Acara</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={e => setEditDate(e.target.value)}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Budget (Rp)</label>
+                  <input
+                    type="number"
+                    value={editBudget}
+                    onChange={e => setEditBudget(e.target.value)}
+                    placeholder="5000000"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setMyReqModal(null)} className="flex-1 border border-gray-200 text-gray-500 py-3 rounded text-sm font-medium hover:bg-gray-50">
+                  Batal
+                </button>
+                <button
+                  onClick={saveMyReq}
+                  disabled={editSaving || !editDesc.trim()}
+                  className="flex-1 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white py-3 rounded text-sm font-bold transition-colors"
+                >
+                  {editSaving ? 'Menyimpan...' : '💾 Simpan Perubahan'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
