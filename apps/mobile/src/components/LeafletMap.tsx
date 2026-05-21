@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { StyleSheet } from 'react-native'
 import WebView from 'react-native-webview'
 
@@ -41,6 +41,7 @@ interface Props {
   onPromoPress?: (vendorId: string, promoText: string) => void
   onRequestPress?: (requestId: string, description: string, category: string, eventDate: string, budget: number) => void
   onLocationPicked?: (lat: number, lng: number) => void
+  flyTo?: { lat: number; lng: number } | null
   style?: object
 }
 
@@ -62,9 +63,21 @@ export default function LeafletMap({
   userLat = -6.2, userLng = 106.8, radiusKm = 10,
   mode = 'view',
   onVendorPress, onPromoPress, onRequestPress, onLocationPicked,
+  flyTo,
   style,
 }: Props) {
   const webviewRef = useRef<WebView>(null)
+
+  useEffect(() => {
+    if (flyTo) {
+      webviewRef.current?.injectJavaScript(`
+        if (typeof map !== 'undefined') {
+          map.flyTo([${flyTo.lat}, ${flyTo.lng}], 16, { duration: 1.2 });
+        }
+        true;
+      `)
+    }
+  }, [flyTo])
 
   const markersJson = JSON.stringify(vendors.map((v) => ({
     id: v.id,

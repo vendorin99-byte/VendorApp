@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
+import L from 'leaflet'
 
 const CATEGORIES = ['Wedding Organizer', 'Fotografer', 'Event Organizer', 'Katering', 'Dekorasi', 'Sewa Mobil', 'Musik', 'Videotron', 'Lighting', 'Venue']
 
@@ -25,6 +27,103 @@ function parseHours(raw: any): Record<string, { open: string; close: string; is_
 function serializeHours(hours: Record<string, { open: string; close: string; is_open: boolean }>) {
   return Object.fromEntries(
     DAYS.map((d) => [d, hours[d].is_open ? `${hours[d].open}-${hours[d].close}` : 'Tutup'])
+  )
+}
+
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({ click: (e) => onMapClick(e.latlng.lat, e.latlng.lng) })
+  return null
+}
+
+function FlyTo({ pos }: { pos: [number, number] | null }) {
+  const map = useMap()
+  useEffect(() => { if (pos) map.flyTo(pos, 16, { duration: 1 }) }, [pos])
+  return null
+}
+
+function LocationMap({ lat, lng, onChange }: { lat: number; lng: number; onChange: (lat: number, lng: number) => void }) {
+  const [flyPos, setFlyPos] = useState<[number, number] | null>(null)
+  const [searchQ, setSearchQ] = useState('')
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function onSearchChange(q: string) {
+    setSearchQ(q)
+    if (timer.current) clearTimeout(timer.current)
+    if (!q.trim()) { setSuggestions([]); return }
+    timer.current = setTimeout(() => doSearch(q), 600)
+  }
+
+  async function doSearch(q: string) {
+    setSearching(true)
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=id`)
+      setSuggestions(await res.json())
+    } catch {}
+    setSearching(false)
+  }
+
+  function pickSuggestion(item: any) {
+    const plat = parseFloat(item.lat), plng = parseFloat(item.lon)
+    setSuggestions([])
+    setSearchQ(item.display_name.split(',').slice(0, 2).join(', '))
+    setFlyPos([plat, plng])
+    onChange(plat, plng)
+  }
+
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="width:20px;height:20px;background:#3B5BDB;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>',
+    iconSize: [20, 20], iconAnchor: [10, 20],
+  })
+
+  const center: [number, number] = (lat && lng) ? [lat, lng] : [-6.2, 106.816]
+
+  return (
+    <div className="space-y-2">
+      {/* Search */}
+      <div className="relative">
+        <div className="flex items-center gap-2 border rounded px-3 py-2 focus-within:ring-2 focus-within:ring-primary">
+          <span className="text-gray-400 text-sm">🔍</span>
+          <input
+            type="text" value={searchQ} onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Cari alamat, nama jalan, gedung..."
+            className="flex-1 text-sm outline-none"
+          />
+          {searching && <span className="text-xs text-gray-400">Mencari...</span>}
+        </div>
+        {suggestions.length > 0 && (
+          <div className="absolute z-[1000] w-full bg-white border rounded shadow-lg mt-1 max-h-48 overflow-y-auto">
+            {suggestions.map((s, i) => (
+              <button key={i} onClick={() => pickSuggestion(s)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b last:border-0">
+                📍 {s.display_name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Map */}
+      <div className="rounded overflow-hidden border" style={{ height: 300 }}>
+        <MapContainer center={center} zoom={lat && lng ? 15 : 11} style={{ height: '100%', width: '100%' }} zoomControl>
+          <TileLayer
+            attribution='© OpenStreetMap © CARTO'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          />
+          <FlyTo pos={flyPos} />
+          <MapClickHandler onMapClick={(lt, ln) => { onChange(lt, ln); setFlyPos([lt, ln]) }} />
+          {lat && lng && <Marker position={[lat, lng]} icon={icon} />}
+        </MapContainer>
+      </div>
+
+      {lat && lng ? (
+        <p className="text-xs text-gray-500">📍 {lat.toFixed(5)}, {lng.toFixed(5)} — Klik peta untuk pindah titik</p>
+      ) : (
+        <p className="text-xs text-gray-400">Cari alamat atau klik langsung di peta untuk menentukan lokasi</p>
+      )}
+    </div>
   )
 }
 
@@ -94,6 +193,14 @@ export default function Settings() {
           <Field label="Alamat Lengkap (opsional)">
             <input className={input} value={profile.address || ''} onChange={(e) => setProfile({ ...profile, address: e.target.value })} placeholder="Jl. Contoh No. 1, Kelurahan, Kecamatan" />
           </Field>
+          <Field label="Lokasi Usaha di Peta">
+            <LocationMap
+              lat={profile.lat}
+              lng={profile.lng}
+              onChange={(lat, lng) => setProfile({ ...profile, lat, lng })}
+            />
+          </Field>
+
           <Field label={`Jangkauan Layanan: ${profile.service_radius_km || 25} km`}>
             <div className="space-y-2">
               <input
