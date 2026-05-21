@@ -3,6 +3,7 @@ import { z } from 'zod'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import crypto from 'crypto'
+import multer from 'multer'
 import { supabase } from '../lib/supabase'
 import { requireAuth } from '../middlewares/auth'
 import {
@@ -12,6 +13,7 @@ import {
 } from '../services/email'
 
 const router = Router()
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
 
 function signToken(payload: object) {
   return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '30d' })
@@ -78,15 +80,36 @@ router.post('/register', async (req, res) => {
 })
 
 // ── Vendor register ──────────────────────────────────────────────────────────
-router.post('/register-vendor', async (req, res) => {
-  const { business_name, name, email, phone, category, city, password } = req.body
+router.post('/register-vendor', upload.fields([{ name: 'ktp', maxCount: 1 }, { name: 'nib', maxCount: 1 }]), async (req, res) => {
+  const { business_name, name, email, phone, category, city, password, npwp, vendor_type } = req.body
 
   if (!email || !password || !business_name || !name || !category) {
     return res.status(400).json({ error: 'Semua field wajib diisi' })
   }
 
+  const files = req.files as Record<string, Express.Multer.File[]> | undefined
+  const ktpFile = files?.ktp?.[0]
+  const nibFile = files?.nib?.[0]
+
+  if (!ktpFile) return res.status(400).json({ error: 'Foto KTP wajib diupload' })
+  if (vendor_type === 'perusahaan' && !nibFile) return res.status(400).json({ error: 'Dokumen NIB / AKTA wajib diupload untuk badan usaha' })
+
   const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle()
   if (existing) return res.status(400).json({ error: 'Email sudah terdaftar' })
+
+  // Upload KTP/NIB to Supabase Storage (private-docs bucket)
+  let ktp_url: string | null = null
+  let nib_url: string | null = null
+
+  const ktpPath = `ktp/${Date.now()}-${ktpFile.originalname}`
+  const { error: ktpUploadErr } = await supabase.storage.from('private-docs').upload(ktpPath, ktpFile.buffer, { contentType: ktpFile.mimetype, upsert: false })
+  if (!ktpUploadErr) ktp_url = ktpPath
+
+  if (nibFile) {
+    const nibPath = `nib/${Date.now()}-${nibFile.originalname}`
+    const { error: nibUploadErr } = await supabase.storage.from('private-docs').upload(nibPath, nibFile.buffer, { contentType: nibFile.mimetype, upsert: false })
+    if (!nibUploadErr) nib_url = nibPath
+  }
 
   const password_hash = await bcrypt.hash(password, 10)
 
@@ -103,6 +126,8 @@ router.post('/register-vendor', async (req, res) => {
     business_name,
     category,
     city,
+    ktp_url,
+    nib_url,
   }).select().single()
 
   if (vendorErr || !vendor) return res.status(500).json({ error: vendorErr?.message || 'Gagal membuat profil vendor' })

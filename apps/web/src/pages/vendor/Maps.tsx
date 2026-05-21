@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import api from '../../services/api'
@@ -57,6 +58,7 @@ export default function VendorMaps() {
   const filtered = category ? requests.filter(r => r.category === category) : requests
 
   function openBid(req: any) {
+    mapRef.current?.closePopup()
     setSelectedReq(req)
     setBidPrice('')
     setBidNote('')
@@ -182,9 +184,9 @@ export default function VendorMaps() {
         </div>
       </div>
 
-      {/* Bid modal */}
-      {selectedReq && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      {/* Bid modal — portal ke body agar tidak tertumpuk stacking context layout */}
+      {selectedReq && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: 99999 }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="p-6 space-y-4">
               <div className="flex items-start justify-between">
@@ -229,7 +231,7 @@ export default function VendorMaps() {
                     <button
                       onClick={submitBid}
                       disabled={bidSubmitting || !bidPrice}
-                      className="flex-2 flex-1 bg-teal-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-teal-700 disabled:opacity-60 transition-colors"
+                      className="flex-1 bg-teal-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-teal-700 disabled:opacity-60 transition-colors"
                     >
                       {bidSubmitting ? 'Mengirim...' : 'Kirim Penawaran'}
                     </button>
@@ -247,7 +249,8 @@ export default function VendorMaps() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

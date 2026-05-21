@@ -65,7 +65,7 @@ export default function Register() {
       fd.append('vendor_type', vendorType)
       fd.append('ktp', ktp)
       if (nib) fd.append('nib', nib)
-      await api.post('/auth/register-vendor', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      await api.post('/auth/register-vendor', fd)
       navigate('/mitra/waiting')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Pendaftaran gagal')
