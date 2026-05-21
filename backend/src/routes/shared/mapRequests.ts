@@ -21,8 +21,8 @@ const bidSchema = z.object({
   note: z.string().max(200).optional(),
 })
 
-// GET semua request terbuka (vendor lihat di maps)
-router.get('/active', requireAuth, async (_req, res) => {
+// GET semua request terbuka (publik — vendor & pengunjung website bisa lihat)
+router.get('/active', async (_req, res) => {
   const { data, error } = await supabase
     .from('map_requests')
     .select(`*, users!customer_id(id, name)`)
