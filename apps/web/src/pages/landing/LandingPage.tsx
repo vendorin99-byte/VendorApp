@@ -23,6 +23,12 @@ function FlyToUser({ pos }: { pos: [number, number] | null }) {
   return null
 }
 
+function MapController({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap()
+  useEffect(() => { mapRef.current = map }, [map])
+  return null
+}
+
 function makeVendorIcon(emoji: string) {
   return L.divIcon({
     className: '',
@@ -72,6 +78,31 @@ export default function LandingPage() {
   const [category, setCategory] = useState('')
   const [center] = useState<[number, number]>([-6.2, 106.816])
   const [userPos, setUserPos] = useState<[number, number] | null>(null)
+  const mapRef = useRef<L.Map | null>(null)
+
+  function flyToMarkers(points: [number, number][]) {
+    if (!mapRef.current || points.length === 0) return
+    if (points.length === 1) {
+      mapRef.current.flyTo(points[0], 16, { duration: 1.2 })
+    } else {
+      mapRef.current.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 15, duration: 1.2 } as any)
+    }
+  }
+
+  function flyToVendors() {
+    const points = vendors.filter(v => v.latitude && v.longitude).map(v => [parseFloat(v.latitude), parseFloat(v.longitude)] as [number, number])
+    flyToMarkers(points)
+  }
+
+  function flyToPromos() {
+    const points = promos.filter(p => p.vendors?.lat && p.vendors?.lng).map(p => [p.vendors.lat, p.vendors.lng] as [number, number])
+    flyToMarkers(points)
+  }
+
+  function flyToRequests() {
+    const points = requests.filter(r => r.lat && r.lng).map(r => [r.lat, r.lng] as [number, number])
+    flyToMarkers(points)
+  }
 
   // Bid modal state
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
@@ -142,6 +173,7 @@ export default function LandingPage() {
         />
 
         <FlyToUser pos={userPos} />
+        <MapController mapRef={mapRef} />
 
         {/* User location dot */}
         {userPos && (
@@ -271,12 +303,30 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Map legend */}
+        {/* Map legend — klikable */}
         <div className="pointer-events-auto px-3 sm:px-4">
-          <div className="inline-flex items-center gap-3 bg-dark-card/80 backdrop-blur-sm px-3 py-1.5 rounded border border-dark-border text-xs text-white/60">
-            <span>📍 {vendors.length} vendor</span>
-            <span>⚡ {promos.length} promo</span>
-            <span>🙋 {requests.length} permintaan</span>
+          <div className="inline-flex items-center bg-dark-card/80 backdrop-blur-sm border border-dark-border text-xs overflow-hidden rounded">
+            <button
+              onClick={flyToVendors}
+              disabled={vendors.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-default transition-colors border-r border-dark-border"
+            >
+              📍 <span>{vendors.length} vendor</span>
+            </button>
+            <button
+              onClick={flyToPromos}
+              disabled={promos.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-default transition-colors border-r border-dark-border"
+            >
+              ⚡ <span>{promos.length} promo</span>
+            </button>
+            <button
+              onClick={flyToRequests}
+              disabled={requests.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-default transition-colors"
+            >
+              🙋 <span>{requests.length} permintaan</span>
+            </button>
           </div>
         </div>
 
