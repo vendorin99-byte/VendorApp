@@ -48,7 +48,7 @@ export default function LandingPage() {
       <MapContainer
         center={center}
         zoom={12}
-        className="w-full h-full z-0"
+        className="absolute inset-0 w-full h-full z-0"
         zoomControl={false}
       >
         <TileLayer
@@ -81,16 +81,52 @@ export default function LandingPage() {
         ))}
       </MapContainer>
 
-      {/* Top bar overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 px-4 pt-4 pointer-events-none">
-        <div className="flex items-center gap-3 pointer-events-auto">
-          {/* Logo */}
-          <div className="flex items-center gap-2 bg-dark-card/90 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg border border-dark-border">
+      {/* Overlay — flex column so items stack naturally */}
+      <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
+
+        {/* ── Mobile top bar (< sm) ── */}
+        <div className="sm:hidden pointer-events-auto px-3 pt-4 pb-2 flex flex-col gap-2">
+          {/* Row 1: Logo + Auth buttons */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-dark-card/90 backdrop-blur-sm px-3 py-2 rounded-2xl shadow-lg border border-dark-border shrink-0">
+              <img src="/Logo.png" alt="VendorApp" className="w-6 h-6 object-contain" />
+              <span className="text-primary font-bold text-sm tracking-wider">VENDOR APP</span>
+            </div>
+            <div className="flex-1" />
+            <Link
+              to="/mitra/login"
+              className="bg-dark-card/90 backdrop-blur-sm text-white border border-dark-border px-3 py-2 rounded-xl text-xs font-medium hover:border-primary transition-colors shadow-lg whitespace-nowrap"
+            >
+              Masuk
+            </Link>
+            <Link
+              to="/mitra/register"
+              className="bg-primary text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-primary-dark transition-colors shadow-lg whitespace-nowrap"
+            >
+              Daftar
+            </Link>
+          </div>
+
+          {/* Row 2: Search full width */}
+          <div className="flex items-center bg-dark-card/90 backdrop-blur-sm rounded-2xl px-3 py-2.5 shadow-lg border border-dark-border gap-2">
+            <span className="text-white/40 text-sm shrink-0">🔍</span>
+            <input
+              type="text"
+              placeholder="Cari vendor EO, fotografer..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-white placeholder-white/30 text-sm outline-none min-w-0"
+            />
+          </div>
+        </div>
+
+        {/* ── Desktop top bar (≥ sm) ── */}
+        <div className="hidden sm:flex pointer-events-auto items-center gap-3 px-4 pt-4 pb-2">
+          <div className="flex items-center gap-2 bg-dark-card/90 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg border border-dark-border shrink-0">
             <img src="/Logo.png" alt="VendorApp" className="w-7 h-7 object-contain" />
             <span className="text-primary font-bold text-base tracking-wider">VENDOR APP</span>
           </div>
 
-          {/* Search bar */}
           <div className="flex-1 flex items-center bg-dark-card/90 backdrop-blur-sm rounded-2xl px-4 py-2.5 shadow-lg border border-dark-border gap-2">
             <span className="text-white/40 text-sm">🔍</span>
             <input
@@ -102,44 +138,52 @@ export default function LandingPage() {
             />
           </div>
 
-          {/* Auth buttons */}
-          <div className="flex gap-2">
-            <Link to="/mitra/login" className="bg-dark-card/90 backdrop-blur-sm text-white border border-dark-border px-4 py-2.5 rounded-2xl text-sm font-medium hover:border-primary transition-colors shadow-lg">
+          <div className="flex gap-2 shrink-0">
+            <Link
+              to="/mitra/login"
+              className="bg-dark-card/90 backdrop-blur-sm text-white border border-dark-border px-4 py-2.5 rounded-2xl text-sm font-medium hover:border-primary transition-colors shadow-lg"
+            >
               Masuk
             </Link>
-            <Link to="/mitra/register" className="bg-primary text-white px-4 py-2.5 rounded-2xl text-sm font-semibold hover:bg-primary-dark transition-colors shadow-lg">
+            <Link
+              to="/mitra/register"
+              className="bg-primary text-white px-4 py-2.5 rounded-2xl text-sm font-semibold hover:bg-primary-dark transition-colors shadow-lg"
+            >
               Daftar Vendor
             </Link>
           </div>
         </div>
-      </div>
 
-      {/* Category filter — horizontal scroll below search */}
-      <div className="absolute top-20 left-0 right-0 z-10 px-4 pointer-events-none">
-        <div className="flex gap-2 overflow-x-auto pb-1 pointer-events-auto" style={{ scrollbarWidth: 'none' }}>
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setCategory(c.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shadow-md border ${
-                category === c.key
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-dark-card/90 backdrop-blur-sm text-white/80 border-dark-border hover:border-primary'
-              }`}
-            >
-              <span>{c.icon}</span>
-              <span>{c.label}</span>
-            </button>
-          ))}
+        {/* ── Category chips (both mobile & desktop) ── */}
+        <div className="pointer-events-auto px-3 sm:px-4 pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setCategory(c.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shadow-md border ${
+                  category === c.key
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-dark-card/90 backdrop-blur-sm text-white/80 border-dark-border hover:border-primary'
+                }`}
+              >
+                <span>{c.icon}</span>
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Bottom info bar */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <div className="bg-dark-card/90 backdrop-blur-sm text-white/60 text-xs px-5 py-2 rounded-full border border-dark-border shadow-lg">
-          {vendors.length > 0
-            ? `${vendors.length} vendor ditemukan di peta`
-            : 'Vendor ditampilkan sebagai pin di peta'}
+        {/* Map click-through area */}
+        <div className="flex-1" />
+
+        {/* Bottom info bar */}
+        <div className="pointer-events-none flex justify-center pb-4">
+          <div className="bg-dark-card/90 backdrop-blur-sm text-white/60 text-xs px-5 py-2 rounded-full border border-dark-border shadow-lg">
+            {vendors.length > 0
+              ? `${vendors.length} vendor ditemukan di peta`
+              : 'Vendor ditampilkan sebagai pin di peta'}
+          </div>
         </div>
       </div>
     </div>
