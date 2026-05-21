@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
 const api = axios.create({
-  baseURL: 'https://vendorin-backend.onrender.com/api',
+  baseURL: 'https://vendorapp-8h7d.onrender.com/api',
   timeout: 35000,
 })
 

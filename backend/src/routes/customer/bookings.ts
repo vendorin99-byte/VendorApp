@@ -112,13 +112,15 @@ router.post('/:id/create-payment', requireAuth, requireRole('customer'), async (
     })
 
     const qrString = (charge as any).qr_string
+    const actions = (charge as any).actions || []
+    const qrImageUrl = actions.find((a: any) => a.name === 'generate-qr-code')?.url ?? null
 
     await supabase.from('transactions')
       .update({ tripay_reference: orderId })
       .eq('booking_id', booking.id)
       .eq('type', paymentType)
 
-    res.json({ qr_string: qrString, order_id: orderId, amount })
+    res.json({ qr_string: qrString, qr_image_url: qrImageUrl, order_id: orderId, amount })
   } catch (e: any) {
     res.status(500).json({ error: e.message || 'Gagal membuat QRIS' })
   }
@@ -278,7 +280,7 @@ router.get('/my', requireAuth, requireRole('customer'), async (req, res) => {
   const { status } = req.query
   let query = supabase
     .from('bookings')
-    .select(`*, vendors(business_name, category, avatar_url), services(name)`)
+    .select(`*, vendors(business_name, category), services(name)`)
     .eq('customer_id', req.user!.id)
     .order('created_at', { ascending: false })
 

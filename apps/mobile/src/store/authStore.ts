@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
+import * as FileSystem from 'expo-file-system'
+
+const NAV_STATE_FILE = FileSystem.documentDirectory + 'nav_state.json'
 
 interface User { id: string; name: string; email: string; role: string }
 interface AuthState {
@@ -21,6 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await SecureStore.deleteItemAsync('auth_token')
     await SecureStore.deleteItemAsync('auth_user')
+    FileSystem.deleteAsync(NAV_STATE_FILE, { idempotent: true }).catch(() => {})
     set({ token: null, user: null })
   },
   loadFromStorage: async () => {
