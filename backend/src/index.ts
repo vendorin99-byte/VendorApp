@@ -39,12 +39,7 @@ const PORT = process.env.PORT || 4000
 app.set('trust proxy', 1)
 
 app.use(helmet())
-const allowedOrigins = [
-  'https://web-henna-five-13.vercel.app',
-  'http://localhost:5173',
-  ...(process.env.CORS_ORIGIN?.split(',').map(s => s.trim()) || []),
-].filter(Boolean)
-app.use(cors({ origin: allowedOrigins, credentials: true }))
+app.use(cors({ origin: '*' }))
 app.use(express.json())
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 })
