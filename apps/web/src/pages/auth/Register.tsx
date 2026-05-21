@@ -7,7 +7,7 @@ const CATEGORIES = ['Wedding Organizer', 'Fotografer', 'Event Organizer', 'Kater
 const FAQ = [
   {
     q: 'Dokumen apa yang diperlukan?',
-    a: 'KTP pemilik/penanggung jawab (wajib), NIB atau AKTA Perusahaan (opsional untuk badan usaha), dan NPWP (opsional namun disarankan untuk proses pembayaran pajak).',
+    a: 'KTP pemilik/penanggung jawab wajib untuk semua jenis. NIB atau AKTA Perusahaan diperlukan khusus untuk badan usaha (Perusahaan).',
   },
   {
     q: 'Apakah data saya aman?',
@@ -35,8 +35,11 @@ function FileUpload({ id, label, required, value, onChange }: { id: string; labe
   )
 }
 
+type VendorType = 'perusahaan' | 'perorangan'
+
 export default function Register() {
   const navigate = useNavigate()
+  const [vendorType, setVendorType] = useState<VendorType>('perusahaan')
   const [form, setForm] = useState({
     business_name: '', name: '', email: '', phone: '',
     category: '', city: '', password: '', npwp: '',
@@ -52,13 +55,14 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!ktp) return setError('Foto KTP wajib diupload')
-    if (!nib) return setError('Dokumen NIB / AKTA Perusahaan wajib diupload')
+    if (vendorType === 'perusahaan' && !nib) return setError('Dokumen NIB / AKTA Perusahaan wajib diupload')
     if (!agreed) return setError('Anda harus menyetujui kebijakan pengumpulan data')
     setLoading(true)
     setError('')
     try {
       const fd = new FormData()
       Object.entries(form).forEach(([k, v]) => fd.append(k, v))
+      fd.append('vendor_type', vendorType)
       fd.append('ktp', ktp)
       if (nib) fd.append('nib', nib)
       await api.post('/auth/register-vendor', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
@@ -77,7 +81,7 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-700 via-primary to-blue-500 px-4 py-8">
       <div className="w-full max-w-4xl bg-dark-card rounded-3xl shadow-2xl overflow-hidden flex min-h-[560px]">
 
-        {/* Left panel */}
+        {/* Left panel — desktop only */}
         <div className="hidden md:flex flex-col items-center justify-center w-2/5 bg-gradient-to-b from-primary to-blue-800 p-10 gap-6">
           <img src="/Logo.png" alt="VendorApp" className="w-24 h-24 object-contain" />
           <div className="text-center">
@@ -115,16 +119,39 @@ export default function Register() {
         </div>
 
         {/* Right panel — form */}
-        <div className="flex-1 flex flex-col justify-center p-8 md:p-10 overflow-y-auto">
+        <div className="flex-1 flex flex-col justify-center p-6 sm:p-8 md:p-10 overflow-y-auto">
+          {/* Mobile logo */}
           <div className="flex md:hidden justify-center mb-4">
             <img src="/Logo.png" alt="VendorApp" className="w-14 h-14 object-contain" />
           </div>
 
-          <h2 className="text-white font-bold text-2xl mb-1">Kembangkan Bisnis Anda</h2>
-          <p className="text-white/50 text-sm mb-6">Isi data di bawah untuk mendaftarkan bisnis Anda</p>
+          {/* Vendor type tabs */}
+          <div className="flex rounded-xl overflow-hidden border border-white/15 mb-5 bg-white/5">
+            <button
+              type="button"
+              onClick={() => { setVendorType('perusahaan'); setNib(null) }}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${vendorType === 'perusahaan' ? 'bg-primary text-white' : 'text-white/50 hover:text-white/80'}`}
+            >
+              🏢 Perusahaan
+            </button>
+            <button
+              type="button"
+              onClick={() => { setVendorType('perorangan'); setNib(null) }}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${vendorType === 'perorangan' ? 'bg-primary text-white' : 'text-white/50 hover:text-white/80'}`}
+            >
+              👤 Perorangan
+            </button>
+          </div>
+
+          <h2 className="text-white font-bold text-xl sm:text-2xl mb-1">Kembangkan Bisnis Anda</h2>
+          <p className="text-white/50 text-sm mb-5">
+            {vendorType === 'perusahaan'
+              ? 'Daftar sebagai badan usaha — KTP dan NIB/AKTA wajib'
+              : 'Daftar sebagai perorangan — cukup KTP saja'}
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Nama Bisnis</label>
                 <input type="text" required value={form.business_name} onChange={(e) => setForm({ ...form, business_name: e.target.value })} className={inputClass} placeholder="Nama bisnis Anda" />
@@ -135,7 +162,7 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Alamat Email</label>
                 <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} placeholder="contoh@email.com" />
@@ -146,7 +173,7 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Jenis Layanan</label>
                 <select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass + ' appearance-none'}>
@@ -183,21 +210,29 @@ export default function Register() {
                 <FileUpload id="ktp-file" label="Klik untuk upload foto KTP" required value={ktp} onChange={setKtp} />
               </div>
 
-              <div>
-                <label className={labelClass}>NIB / AKTA Perusahaan <span className="text-red-400 normal-case">* wajib</span></label>
-                <FileUpload id="nib-file" label="Klik untuk upload NIB atau AKTA" required value={nib} onChange={setNib} />
-              </div>
+              {vendorType === 'perusahaan' && (
+                <>
+                  <div>
+                    <label className={labelClass}>NIB / AKTA Perusahaan <span className="text-red-400 normal-case">* wajib</span></label>
+                    <FileUpload id="nib-file" label="Klik untuk upload NIB atau AKTA" value={nib} onChange={setNib} />
+                  </div>
 
-              <div>
-                <label className={labelClass}>NPWP <span className="text-white/30 normal-case">(opsional)</span></label>
-                <input
-                  type="text"
-                  value={form.npwp}
-                  onChange={(e) => setForm({ ...form, npwp: e.target.value })}
-                  className={inputClass}
-                  placeholder="XX.XXX.XXX.X-XXX.XXX"
-                />
-              </div>
+                  <div>
+                    <label className={labelClass}>NPWP <span className="text-white/30 normal-case">(opsional)</span></label>
+                    <input
+                      type="text"
+                      value={form.npwp}
+                      onChange={(e) => setForm({ ...form, npwp: e.target.value })}
+                      className={inputClass}
+                      placeholder="XX.XXX.XXX.X-XXX.XXX"
+                    />
+                  </div>
+                </>
+              )}
+
+              {vendorType === 'perorangan' && (
+                <p className="text-white/40 text-xs">Untuk perorangan, hanya Foto KTP yang diperlukan.</p>
+              )}
             </div>
 
             {/* Consent checkbox */}
