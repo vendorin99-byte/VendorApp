@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Text, View, ActivityIndicator } from 'react-native'
 import { useAuthStore } from '../store/authStore'
-import api from '../services/api'
 
 // Auth screens
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -67,20 +66,10 @@ function MainTabs() {
 export default function AppNavigation() {
   const { token, user, loadFromStorage } = useAuthStore()
   const [booting, setBooting] = useState(true)
-  const [verified, setVerified] = useState<boolean | null>(null)
 
   useEffect(() => {
     loadFromStorage().then(() => setBooting(false))
   }, [])
-
-  // Check vendor verified status when logged in
-  useEffect(() => {
-    if (token && user?.role === 'vendor') {
-      api.get('/vendor/profile').then(r => setVerified(r.data.verified ?? false)).catch(() => setVerified(false))
-    } else {
-      setVerified(null)
-    }
-  }, [token])
 
   if (booting) {
     return (
@@ -91,23 +80,19 @@ export default function AppNavigation() {
   }
 
   const isLoggedIn = !!token && user?.role === 'vendor'
-  const isVerified = verified === true
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
         {!isLoggedIn ? (
-          // Auth flow
+          // Auth flow — Waiting bisa dicapai setelah Register
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Waiting" component={WaitingScreen} />
           </>
-        ) : !isVerified ? (
-          // Logged in but not verified
-          <Stack.Screen name="Waiting" component={WaitingScreen} />
         ) : (
-          // Verified vendor — full app
+          // Logged in → langsung ke app
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
