@@ -8,6 +8,7 @@ const navItems = [
   { to: '/mitra/dashboard/wallet', label: 'Dompet', icon: '💰' },
   { to: '/mitra/dashboard/portfolio', label: 'Portofolio', icon: '🖼️' },
   { to: '/mitra/dashboard/services', label: 'Paket Layanan', icon: '📦' },
+  { to: '/mitra/dashboard/maps', label: 'Peta Permintaan', icon: '🗺️' },
   { to: '/mitra/dashboard/ads', label: 'Iklan & Langganan', icon: '📢' },
   { to: '/mitra/dashboard/stats', label: 'Statistik', icon: '📊' },
   { to: '/mitra/dashboard/settings', label: 'Pengaturan', icon: '⚙️' },

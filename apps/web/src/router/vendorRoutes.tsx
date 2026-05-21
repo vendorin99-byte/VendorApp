@@ -9,6 +9,7 @@ import Services from '../pages/vendor/Services'
 import Ads from '../pages/vendor/Ads'
 import Stats from '../pages/vendor/Stats'
 import Settings from '../pages/vendor/Settings'
+import Maps from '../pages/vendor/Maps'
 
 const vendorRoutes = (
   <Route path="/mitra/dashboard" element={<VendorLayout />}>
@@ -20,6 +21,7 @@ const vendorRoutes = (
     <Route path="services" element={<Services />} />
     <Route path="ads" element={<Ads />} />
     <Route path="stats" element={<Stats />} />
+    <Route path="maps" element={<Maps />} />
     <Route path="settings" element={<Settings />} />
   </Route>
 )
