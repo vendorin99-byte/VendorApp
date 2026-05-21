@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "VendorApp Mitra",
-    "slug": "vendor-app-mitra",
+    "name": "Agent VendorApp",
+    "slug": "agent-vendorapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/Logo.png",
@@ -9,14 +9,14 @@
     "splash": {
       "image": "./assets/Logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D0D1A"
+      "backgroundColor": "#0A1628"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0D0D1A"
+        "backgroundColor": "#0A1628"
       },
-      "package": "com.vendorin.mitra",
+      "package": "com.vendorin.agent",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -25,7 +25,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.vendorin.mitra"
+      "bundleIdentifier": "com.vendorin.agent"
     },
     "plugins": [
       "expo-secure-store",
@@ -33,6 +33,20 @@
       "expo-notifications",
       "expo-font",
       "expo-document-picker"
-    ]
+    ],
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 3000
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "24616707-acc1-4ce7-92c6-6c6e41ddc493"
+      }
+    },
+    "owner": "vendorin"
   }
 }
