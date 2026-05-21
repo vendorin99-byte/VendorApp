@@ -31,6 +31,7 @@ export default function MapsScreen() {
   const [promos, setPromos] = useState<any[]>([])
   const [requests, setRequests] = useState<any[]>([])
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [locationReady, setLocationReady] = useState(false)
   const [radius, setRadius] = useState('10km')
   const [category, setCategory] = useState('Semua')
   const [loading, setLoading] = useState(true)
@@ -60,10 +61,16 @@ export default function MapsScreen() {
 
   useEffect(() => {
     async function init() {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status === 'granted') {
-        const pos = await Location.getCurrentPositionAsync({})
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      const timeout = setTimeout(() => setLocationReady(true), 4000)
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync()
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+          setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        }
+      } finally {
+        clearTimeout(timeout)
+        setLocationReady(true)
       }
     }
     init()
@@ -71,7 +78,9 @@ export default function MapsScreen() {
     fetchRequests()
   }, [])
 
-  useEffect(() => { fetchVendors() }, [location, radius, category])
+  useEffect(() => {
+    if (locationReady) fetchVendors()
+  }, [location, radius, category, locationReady])
 
   async function fetchVendors() {
     setLoading(true)
