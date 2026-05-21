@@ -52,6 +52,12 @@ export default function MapsScreen() {
   // Modal: vendor chat dari promo
   const [activePromo, setActivePromo] = useState<{ vendorId: string; text: string } | null>(null)
 
+  // Modal: customer lihat request sendiri + bids masuk
+  const [myRequest, setMyRequest] = useState<any>(null)
+  const [myRequestBids, setMyRequestBids] = useState<any[]>([])
+  const [myBidsLoading, setMyBidsLoading] = useState(false)
+  const [acceptingBidId, setAcceptingBidId] = useState<string | null>(null)
+
   useEffect(() => {
     async function init() {
       const { status } = await Location.requestForegroundPermissionsAsync()
@@ -131,6 +137,52 @@ export default function MapsScreen() {
     }
   }
 
+  async function openMyRequest(req: any) {
+    setMyRequest(req)
+    setMyRequestBids([])
+    setMyBidsLoading(true)
+    try {
+      const { data } = await api.get(`/map-requests/${req.id}/bids`)
+      setMyRequestBids(data || [])
+    } catch {}
+    setMyBidsLoading(false)
+  }
+
+  async function deleteMyRequest() {
+    if (!myRequest) return
+    Alert.alert('Hapus Permintaan', 'Permintaan akan dihapus dari peta. Lanjutkan?', [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Hapus', style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/map-requests/${myRequest.id}`)
+            setMyRequest(null)
+            fetchRequests()
+          } catch (e: any) {
+            Alert.alert('Gagal', e.response?.data?.error || 'Coba lagi')
+          }
+        },
+      },
+    ])
+  }
+
+  async function acceptBid(bidId: string, vendorName: string) {
+    setAcceptingBidId(bidId)
+    try {
+      const { data } = await api.post(`/map-requests/bids/${bidId}/accept`)
+      setMyRequest(null)
+      fetchRequests()
+      if (data.room_id) {
+        navigation.navigate('ChatRoom', { roomId: data.room_id, vendorName: vendorName || 'Vendor' })
+      }
+    } catch (e: any) {
+      Alert.alert('Gagal', e.response?.data?.error || 'Coba lagi')
+    } finally {
+      setAcceptingBidId(null)
+    }
+  }
+
   async function openPromoChat() {
     if (!activePromo) return
     try {
@@ -144,15 +196,28 @@ export default function MapsScreen() {
     <View style={[styles.container, { backgroundColor: bg }]}>
       <StatusBar barStyle={statusBar} backgroundColor={statusBarBg} />
 
-      {/* Filter chips */}
-      <View style={[styles.filters, { paddingTop: insets.top + 4, backgroundColor: isDark ? '#1A1A2E' : '#fff', borderBottomColor: cardBorder }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: isDark ? '#1A1A2E' : '#fff', borderBottomColor: cardBorder }]}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerTitle, { color: text }]}>🗺️ Peta Vendor</Text>
+          {!loading && (
+            <Text style={[styles.headerCount, { color: subtext }]}>
+              {vendors.length} vendor · {promos.length} promo · {requests.length} req
+            </Text>
+          )}
+        </View>
+
+        {/* Radius row */}
+        <View style={styles.radiusRow}>
           {RADII.map((r) => (
-            <TouchableOpacity key={r} style={[styles.chip, { backgroundColor: isDark ? '#2A2A4A' : '#F3F4F6', borderColor: cardBorder }, radius === r && styles.chipActive]} onPress={() => setRadius(r)}>
+            <TouchableOpacity key={r} style={[styles.radiusChip, { backgroundColor: isDark ? '#2A2A4A' : '#F3F4F6', borderColor: cardBorder }, radius === r && styles.chipActive]} onPress={() => setRadius(r)}>
               <Text style={[styles.chipText, { color: radius === r ? '#fff' : text }]}>{r}</Text>
             </TouchableOpacity>
           ))}
-          <View style={[styles.divider, { backgroundColor: cardBorder }]} />
+        </View>
+
+        {/* Category scroll row */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
           {CATEGORIES.map((c) => (
             <TouchableOpacity key={c} style={[styles.chip, { backgroundColor: isDark ? '#2A2A4A' : '#F3F4F6', borderColor: cardBorder }, category === c && styles.chipActive]} onPress={() => setCategory(c)}>
               <Text style={[styles.chipText, { color: category === c ? '#fff' : text }]}>{c}</Text>
@@ -160,14 +225,6 @@ export default function MapsScreen() {
           ))}
         </ScrollView>
       </View>
-
-      {!loading && (
-        <View style={[styles.info, { backgroundColor: isDark ? '#1A2A4A' : '#EEF2FF' }]}>
-          <Text style={styles.infoText}>
-            📍 {vendors.length} vendor · ⚡ {promos.length} promo · 🙋 {requests.length} permintaan
-          </Text>
-        </View>
-      )}
 
       {loading ? (
         <View style={styles.loading}>
@@ -184,9 +241,14 @@ export default function MapsScreen() {
           radiusKm={parseInt(radius.replace('km', ''))}
           onVendorPress={(id) => navigation.navigate('VendorDetail', { vendorId: id })}
           onPromoPress={(vendorId, promoText) => setActivePromo({ vendorId, text: promoText })}
-          onRequestPress={(id, description, category, eventDate, budget) =>
-            isVendor && setActiveBidRequest({ id, description, category, eventDate, budget })
-          }
+          onRequestPress={(id, description, category, eventDate, budget) => {
+            const req = requests.find(r => r.id === id)
+            if (!isVendor && req?.customer_id === user?.id) {
+              openMyRequest(req)
+            } else if (isVendor) {
+              setActiveBidRequest({ id, description, category, eventDate, budget })
+            }
+          }}
           style={{ flex: 1 }}
         />
       )}
@@ -307,6 +369,75 @@ export default function MapsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* ── Modal: Customer lihat request sendiri + bids ───────────────── */}
+      <Modal visible={!!myRequest} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: card }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={[styles.modalTitle, { color: text }]}>🙋 Permintaan Saya</Text>
+              <TouchableOpacity onPress={deleteMyRequest}>
+                <Text style={{ color: '#EF4444', fontFamily: 'Poppins_600SemiBold', fontSize: 13 }}>Hapus</Text>
+              </TouchableOpacity>
+            </View>
+
+            {myRequest && (
+              <View style={[styles.requestPreview, { backgroundColor: isDark ? '#0D0D1A' : '#F0FDF4', marginBottom: 12 }]}>
+                <Text style={[styles.requestPreviewCat, { color: '#0D9488' }]}>{myRequest.category}</Text>
+                <Text style={[styles.requestPreviewDesc, { color: text }]}>{myRequest.description}</Text>
+                {myRequest.event_date ? <Text style={[styles.requestPreviewMeta, { color: subtext }]}>📅 {myRequest.event_date}</Text> : null}
+                {myRequest.budget ? <Text style={[styles.requestPreviewMeta, { color: subtext }]}>💰 Budget {formatRp(myRequest.budget)}</Text> : null}
+              </View>
+            )}
+
+            <Text style={[styles.label, { color: text, marginTop: 0 }]}>
+              💼 Penawaran Masuk {myBidsLoading ? '...' : `(${myRequestBids.length})`}
+            </Text>
+
+            {myBidsLoading ? (
+              <ActivityIndicator color="#3B5BDB" style={{ marginVertical: 16 }} />
+            ) : myRequestBids.length === 0 ? (
+              <Text style={[styles.modalSub, { color: subtext, textAlign: 'center', marginVertical: 12 }]}>
+                Belum ada penawaran masuk. Vendor terdekat akan melihat permintaan Anda.
+              </Text>
+            ) : (
+              <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+                {myRequestBids.map((bid) => (
+                  <View key={bid.id} style={[styles.bidCard, { backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB', borderColor: cardBorder }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.bidVendorName, { color: text }]}>{bid.vendors?.business_name || 'Vendor'}</Text>
+                        <Text style={[styles.bidCategory, { color: subtext }]}>{bid.vendors?.category}</Text>
+                        {bid.vendors?.avg_rating ? <Text style={[styles.bidRating, { color: '#F59E0B' }]}>⭐ {Number(bid.vendors.avg_rating).toFixed(1)}</Text> : null}
+                        {bid.note ? <Text style={[styles.bidNote, { color: subtext }]}>{bid.note}</Text> : null}
+                      </View>
+                      <Text style={[styles.bidPrice, { color: '#3B5BDB' }]}>{formatRp(bid.price)}</Text>
+                    </View>
+                    {bid.status === 'pending' && (
+                      <TouchableOpacity
+                        style={[styles.acceptBtn, acceptingBidId === bid.id && { opacity: 0.6 }]}
+                        onPress={() => acceptBid(bid.id, bid.vendors?.business_name)}
+                        disabled={!!acceptingBidId}
+                      >
+                        <Text style={styles.acceptBtnText}>{acceptingBidId === bid.id ? 'Memproses...' : '✅ Terima Penawaran'}</Text>
+                      </TouchableOpacity>
+                    )}
+                    {bid.status === 'accepted' && (
+                      <View style={styles.acceptedBadge}>
+                        <Text style={styles.acceptedBadgeText}>✅ Diterima</Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity style={[styles.cancelBtn2, { marginTop: 12, borderColor: cardBorder }]} onPress={() => setMyRequest(null)}>
+              <Text style={[styles.cancelBtn2Text, { color: subtext }]}>Tutup</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* ── Modal: Chat dari promo vendor ──────────────────────────────── */}
       <Modal visible={!!activePromo} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
@@ -328,14 +459,16 @@ export default function MapsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  filters: { borderBottomWidth: 1 },
-  filterRow: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  header: { borderBottomWidth: 1, paddingBottom: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingBottom: 8 },
+  headerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 15 },
+  headerCount: { fontFamily: 'Poppins_400Regular', fontSize: 11 },
+  radiusRow: { flexDirection: 'row', paddingHorizontal: 14, gap: 8, marginBottom: 8 },
+  radiusChip: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  catRow: { paddingHorizontal: 14, gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   chipActive: { backgroundColor: '#3B5BDB', borderColor: '#3B5BDB' },
   chipText: { fontFamily: 'Poppins_500Medium', fontSize: 12 },
-  divider: { width: 1, marginHorizontal: 4 },
-  info: { paddingHorizontal: 14, paddingVertical: 6 },
-  infoText: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: '#3B5BDB' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { fontFamily: 'Poppins_400Regular' },
   fab: {
@@ -365,4 +498,14 @@ const styles = StyleSheet.create({
   requestPreviewCat: { fontFamily: 'Poppins_700Bold', fontSize: 12, marginBottom: 4 },
   requestPreviewDesc: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 18 },
   requestPreviewMeta: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 4 },
+  bidCard: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 8 },
+  bidVendorName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  bidCategory: { fontFamily: 'Poppins_400Regular', fontSize: 11, marginTop: 1 },
+  bidRating: { fontFamily: 'Poppins_500Medium', fontSize: 11, marginTop: 2 },
+  bidNote: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 4, lineHeight: 17 },
+  bidPrice: { fontFamily: 'Poppins_700Bold', fontSize: 14 },
+  acceptBtn: { backgroundColor: '#3B5BDB', borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 10 },
+  acceptBtnText: { fontFamily: 'Poppins_700Bold', color: '#fff', fontSize: 13 },
+  acceptedBadge: { backgroundColor: '#D1FAE5', borderRadius: 10, paddingVertical: 8, alignItems: 'center', marginTop: 10 },
+  acceptedBadgeText: { fontFamily: 'Poppins_600SemiBold', color: '#059669', fontSize: 12 },
 })
