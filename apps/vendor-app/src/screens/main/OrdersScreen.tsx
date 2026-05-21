@@ -93,19 +93,19 @@ export default function OrdersScreen() {
         renderItem={({ item: o }) => (
           <TouchableOpacity style={styles.card} onPress={() => setSelected(o)}>
             <View style={styles.cardTop}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.customerName}>{o.users?.name}</Text>
-                <Text style={styles.serviceName}>{o.services?.name}</Text>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={styles.customerName} numberOfLines={1}>{o.users?.name || 'Customer'}</Text>
+                <Text style={styles.serviceName} numberOfLines={1}>{o.services?.name || '—'}</Text>
               </View>
               <View style={[styles.statusChip, { backgroundColor: (STATUS_COLOR[o.status] || '#6B7280') + '25' }]}>
                 <Text style={[styles.statusChipText, { color: STATUS_COLOR[o.status] || '#6B7280' }]}>
-                  {STATUS_LABEL[o.status] || o.status}
+                  {STATUS_LABEL[o.status] || o.status || 'Proses'}
                 </Text>
               </View>
             </View>
             <View style={styles.cardBottom}>
-              <Text style={styles.eventDate}>📅 {o.event_date}</Text>
-              <Text style={styles.amount}>{formatRp(o.total_amount)}</Text>
+              <Text style={styles.eventDate}>📅 {o.event_date || '—'}</Text>
+              <Text style={styles.amount}>{formatRp(o.total_amount ?? 0)}</Text>
             </View>
           </TouchableOpacity>
         )}

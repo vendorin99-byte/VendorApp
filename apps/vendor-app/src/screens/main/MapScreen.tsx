@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, StatusBar, Modal, TextInput, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WebView from 'react-native-webview'
+import * as Location from 'expo-location'
 import api from '../../services/api'
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -20,10 +21,25 @@ export default function MapScreen() {
   const [bidNote, setBidNote] = useState('')
   const [bidDone, setBidDone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [userLat] = useState(-6.2)
-  const [userLng] = useState(106.816)
+  const [userLat, setUserLat] = useState(-6.2)
+  const [userLng, setUserLng] = useState(106.816)
+  const [locationReady, setLocationReady] = useState(false)
 
-  useEffect(() => { fetchRequests() }, [])
+  useEffect(() => {
+    fetchRequests()
+    getLocation()
+  }, [])
+
+  async function getLocation() {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') { setLocationReady(true); return }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      setUserLat(loc.coords.latitude)
+      setUserLng(loc.coords.longitude)
+    } catch {}
+    finally { setLocationReady(true) }
+  }
 
   async function fetchRequests() {
     try {
