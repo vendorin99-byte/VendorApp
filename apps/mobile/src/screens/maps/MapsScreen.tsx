@@ -283,14 +283,15 @@ export default function MapsScreen() {
           isVendor={isVendor}
           onVendorPress={(id) => navigation.navigate('VendorDetail', { vendorId: id })}
           onPromoPress={(vendorId, promoText) => setActivePromo({ vendorId, text: promoText })}
-          onRequestPress={(id, description, category, eventDate, budget) => {
-            if (isVendor) setActiveBidRequest({ id, description, category, eventDate, budget })
+          onRequestPress={(id) => {
+            if (isVendor) {
+              const req = requests.find(r => r.id === id)
+              if (req) setActiveBidRequest({ id, description: req.description, category: req.category, eventDate: req.event_date || '', budget: req.budget || 0 })
+            }
           }}
-          onMyRequestPress={(id, description, category, eventDate, budget) => {
-            const fromState = requests.find(r => r.id === id)
-            if (fromState && fromState.customer_id && fromState.customer_id !== user?.id) return
-            const req = fromState ?? { id, description, category, event_date: eventDate || null, budget: budget || null }
-            openMyRequest(req)
+          onMyRequestPress={(id) => {
+            const req = requests.find(r => r.id === id)
+            if (req) openMyRequest(req)
           }}
           style={{ flex: 1 }}
         />

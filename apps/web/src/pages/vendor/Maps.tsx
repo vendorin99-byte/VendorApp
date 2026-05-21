@@ -110,8 +110,8 @@ export default function VendorMaps() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Map */}
-        <div className="xl:col-span-2 bg-white rounded-xl border overflow-hidden" style={{ height: 520 }}>
-          <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl>
+        <div className="xl:col-span-2 bg-white rounded-xl border overflow-hidden">
+          <MapContainer center={center} zoom={12} style={{ height: 460, width: '100%' }} zoomControl>
             <TileLayer
               attribution='© OpenStreetMap © CARTO'
               url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -152,7 +152,7 @@ export default function VendorMaps() {
         </div>
 
         {/* List permintaan */}
-        <div className="bg-white rounded-xl border overflow-hidden flex flex-col" style={{ height: 520 }}>
+        <div className="bg-white rounded-xl border overflow-hidden flex flex-col" style={{ height: 462 }}>
           <div className="p-4 border-b">
             <h2 className="font-semibold text-gray-800">Daftar Permintaan</h2>
           </div>

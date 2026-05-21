@@ -217,15 +217,10 @@ export default function LeafletMap({
       if(r.eventDate) metaLine += '📅 '+r.eventDate+'  ';
       if(r.budget) metaLine += '💰 Rp'+r.budget.toLocaleString();
       var isMyReq = currentUserId && r.customerId === currentUserId;
-      var msgData = '{type:\\'+(isVendorUser?'request':'my_request')+'\\',' +
-        'id:\\''+r.id+'\\',' +
-        'description:'+JSON.stringify(r.description)+',' +
-        'category:\\''+r.category+'\\',' +
-        'eventDate:\\''+r.eventDate+'\\',' +
-        'budget:'+r.budget+'}';
+      var rType = isVendorUser ? 'request' : 'my_request';
       var btnHtml = isVendorUser
-        ? '<button class="popup-btn btn-teal" style="margin-top:8px" onclick="window.ReactNativeWebView.postMessage(JSON.stringify('+msgData+'))">💼 Kirim Penawaran</button>'
-        : '<button class="popup-btn" style="margin-top:8px;background:#6366F1" onclick="window.ReactNativeWebView.postMessage(JSON.stringify('+msgData+'))">📋 Kelola / Hapus Permintaan</button>';
+        ? '<button class="popup-btn btn-teal" style="margin-top:8px" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'request\\',id:\\''+r.id+'\\'}))">💼 Kirim Penawaran</button>'
+        : '<button class="popup-btn" style="margin-top:8px;background:#6366F1" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'my_request\\',id:\\''+r.id+'\\'}))">📋 Kelola / Hapus Permintaan</button>';
       L.marker([r.lat, r.lng], { icon: reqIcon }).addTo(map).bindPopup(
         '<div class="popup-name">'+(isMyReq?'🙋 Permintaan Saya':r.customerName)+'</div>' +
         (r.category ? '<div class="popup-cat">Butuh: '+r.category+'</div>' : '') +
@@ -262,8 +257,8 @@ export default function LeafletMap({
       const msg = JSON.parse(event.nativeEvent.data)
       if (msg.type === 'vendor') onVendorPress?.(msg.id)
       else if (msg.type === 'promo') onPromoPress?.(msg.vendorId, msg.text)
-      else if (msg.type === 'request') onRequestPress?.(msg.id, msg.description, msg.category, msg.eventDate, msg.budget)
-      else if (msg.type === 'my_request') onMyRequestPress?.(msg.id, msg.description, msg.category, msg.eventDate, msg.budget)
+      else if (msg.type === 'request') onRequestPress?.(msg.id, '', '', '', 0)
+      else if (msg.type === 'my_request') onMyRequestPress?.(msg.id, '', '', '', 0)
       else if (msg.type === 'location_picked') onLocationPicked?.(msg.lat, msg.lng)
     } catch {
       // legacy string message from old vendor press
