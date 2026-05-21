@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
@@ -14,6 +14,14 @@ const CATEGORIES = [
   { key: 'Dekorasi', label: 'Dekorasi', icon: '🎀' },
   { key: 'Musik', label: 'Musik', icon: '🎵' },
 ]
+
+function FlyToUser({ pos }: { pos: [number, number] | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (pos) map.flyTo(pos, 14, { duration: 1.5 })
+  }, [pos])
+  return null
+}
 
 function makeVendorIcon(emoji: string) {
   return L.divIcon({
@@ -63,6 +71,7 @@ export default function LandingPage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [center] = useState<[number, number]>([-6.2, 106.816])
+  const [userPos, setUserPos] = useState<[number, number] | null>(null)
 
   // Bid modal state
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
@@ -74,6 +83,12 @@ export default function LandingPage() {
   useEffect(() => {
     api.get('/map-promos/active').then(r => setPromos(r.data || [])).catch(() => {})
     api.get('/map-requests/active').then(r => setRequests(r.data || [])).catch(() => {})
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+        () => {} // tetap di Jakarta jika ditolak
+      )
+    }
   }, [])
 
   useEffect(() => {
@@ -125,6 +140,20 @@ export default function LandingPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
+
+        <FlyToUser pos={userPos} />
+
+        {/* User location dot */}
+        {userPos && (
+          <Marker position={userPos} icon={L.divIcon({
+            className: '',
+            html: `<div style="width:16px;height:16px;background:#3B5BDB;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 3px rgba(59,91,219,0.3)"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          })}>
+            <Popup><div className="text-sm font-semibold text-gray-800">📍 Lokasi Anda</div></Popup>
+          </Marker>
+        )}
 
         {/* Vendor pins */}
         {vendors.filter((v) => v.latitude && v.longitude).map((v) => (
