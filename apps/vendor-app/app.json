@@ -14,7 +14,7 @@
     "android": {
       "icon": "./assets/Logo.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/Logo.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.vendorin.agent",
