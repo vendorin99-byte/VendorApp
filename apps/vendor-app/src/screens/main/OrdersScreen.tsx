@@ -75,14 +75,14 @@ export default function OrdersScreen() {
       </View>
 
       {/* Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={styles.tabContent}>
+      <View style={styles.tabBar}>
         {TABS.map(t => (
           <TouchableOpacity key={t} onPress={() => setTab(t)}
             style={[styles.tab, tab === t && styles.tabActive]}>
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
+            <Text style={[styles.tabText, tab === t && styles.tabTextActive]} numberOfLines={1}>{t}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       <FlatList
         data={filtered}
@@ -176,11 +176,10 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   header: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
   headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
-  tabBar: { borderBottomWidth: 1, borderBottomColor: C.border },
-  tabContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
-  tab: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+  tabBar: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderBottomWidth: 1, borderBottomColor: C.border },
+  tab: { flex: 1, paddingVertical: 8, borderRadius: 20, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center' },
   tabActive: { backgroundColor: C.primary, borderColor: C.primary },
-  tabText: { fontSize: 13, fontWeight: '600', color: C.muted },
+  tabText: { fontSize: 12, fontWeight: '600', color: C.muted },
   tabTextActive: { color: C.text },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
   emptyText: { fontSize: 14, color: C.muted },
