@@ -204,11 +204,23 @@ export default function VendorMaps() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Harga Penawaran Anda (Rp) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Harga Penawaran *</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {[250000, 300000, 350000, 400000, 450000, 500000].map(p => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setBidPrice(String(p))}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${bidPrice === String(p) ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+                        >
+                          {p / 1000}rb
+                        </button>
+                      ))}
+                    </div>
                     <input
                       type="number"
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="contoh: 5000000"
+                      placeholder="Atau ketik nominal lain..."
                       value={bidPrice}
                       onChange={e => setBidPrice(e.target.value)}
                     />
@@ -218,7 +230,7 @@ export default function VendorMaps() {
                     <textarea
                       rows={3}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Jelaskan apa yang termasuk dalam harga ini..."
+                      placeholder="Jelaskan apa yang termasuk dalam penawaran..."
                       value={bidNote}
                       onChange={e => setBidNote(e.target.value)}
                     />
