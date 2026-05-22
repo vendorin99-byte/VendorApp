@@ -24,11 +24,23 @@ export default function MapScreen() {
   const [userLat, setUserLat] = useState(-6.2)
   const [userLng, setUserLng] = useState(106.816)
   const [locationReady, setLocationReady] = useState(false)
+  const [webviewLoaded, setWebviewLoaded] = useState(false)
 
   useEffect(() => {
     fetchRequests()
     getLocation()
   }, [])
+
+  useEffect(() => {
+    if (!webviewLoaded || !locationReady) return
+    webviewRef.current?.injectJavaScript(`
+      try {
+        map.setView([${userLat}, ${userLng}], 14);
+        userMarker.setLatLng([${userLat}, ${userLng}]);
+      } catch(e) {}
+      true;
+    `)
+  }, [webviewLoaded, locationReady])
 
   async function getLocation() {
     try {
@@ -85,7 +97,7 @@ export default function MapScreen() {
       html:'<div style="width:16px;height:16px;border-radius:50%;background:#3B5BDB;border:3px solid #fff;box-shadow:0 0 0 3px rgba(59,91,219,0.3)"></div>',
       iconSize:[16,16], iconAnchor:[8,8],
     });
-    L.marker([${userLat}, ${userLng}], { icon:userIcon }).addTo(map).bindPopup('<b>Lokasi Anda</b>');
+    var userMarker = L.marker([${userLat}, ${userLng}], { icon:userIcon }).addTo(map).bindPopup('<b>Lokasi Anda</b>');
 
     var requests = ${requestsJson};
     requests.forEach(function(r) {
@@ -147,6 +159,7 @@ export default function MapScreen() {
         source={{ html }}
         style={{ flex: 1 }}
         onMessage={handleMessage}
+        onLoadEnd={() => setWebviewLoaded(true)}
         javaScriptEnabled
       />
 
