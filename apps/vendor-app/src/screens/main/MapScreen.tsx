@@ -24,7 +24,9 @@ export default function MapScreen() {
   const [userLat, setUserLat] = useState(-6.2)
   const [userLng, setUserLng] = useState(106.816)
   const [locationReady, setLocationReady] = useState(false)
-  const [webviewLoaded, setWebviewLoaded] = useState(false)
+  const [mapReady, setMapReady] = useState(false)
+  const latRef = useRef(-6.2)
+  const lngRef = useRef(106.816)
 
   useEffect(() => {
     fetchRequests()
@@ -32,21 +34,21 @@ export default function MapScreen() {
   }, [])
 
   useEffect(() => {
-    if (!webviewLoaded || !locationReady) return
+    if (!mapReady || !locationReady) return
     webviewRef.current?.injectJavaScript(`
-      try {
-        map.setView([${userLat}, ${userLng}], 14);
-        userMarker.setLatLng([${userLat}, ${userLng}]);
-      } catch(e) {}
+      map.setView([${latRef.current}, ${lngRef.current}], 14);
+      userMarker.setLatLng([${latRef.current}, ${lngRef.current}]);
       true;
     `)
-  }, [webviewLoaded, locationReady])
+  }, [mapReady, locationReady])
 
   async function getLocation() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') { setLocationReady(true); return }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      latRef.current = loc.coords.latitude
+      lngRef.current = loc.coords.longitude
       setUserLat(loc.coords.latitude)
       setUserLng(loc.coords.longitude)
     } catch {}
@@ -117,13 +119,17 @@ export default function MapScreen() {
         '<button class="popup-btn" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'request\\',id:\\''+r.id+'\\'}))">💼 Kirim Penawaran</button>'
       );
     });
+
+    window.ReactNativeWebView.postMessage(JSON.stringify({type:'mapReady'}));
   </script>
 </body></html>`
 
   function handleMessage(e: { nativeEvent: { data: string } }) {
     try {
       const msg = JSON.parse(e.nativeEvent.data)
-      if (msg.type === 'request') {
+      if (msg.type === 'mapReady') {
+        setMapReady(true)
+      } else if (msg.type === 'request') {
         const req = requests.find(r => r.id === msg.id)
         if (req) { setSelectedReq(req); setBidPrice(''); setBidNote(''); setBidDone(false) }
       }
@@ -159,7 +165,6 @@ export default function MapScreen() {
         source={{ html }}
         style={{ flex: 1 }}
         onMessage={handleMessage}
-        onLoadEnd={() => setWebviewLoaded(true)}
         javaScriptEnabled
       />
 
