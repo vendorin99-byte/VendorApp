@@ -183,6 +183,7 @@ export default function MapScreen() {
 
               {!bidDone ? (
                 <View style={{ padding: 20, gap: 16 }}>
+                  {/* Request info card */}
                   <View style={styles.reqCard}>
                     {selectedReq.category ? <Text style={styles.reqCat}>{selectedReq.category}</Text> : null}
                     <Text style={styles.reqDesc}>{selectedReq.description}</Text>
@@ -191,16 +192,29 @@ export default function MapScreen() {
                     <Text style={styles.reqMeta}>👤 {selectedReq.users?.name || 'Customer'}</Text>
                   </View>
 
-                  <View>
-                    <Text style={styles.inputLabel}>Harga Penawaran (Rp) *</Text>
-                    <TextInput style={styles.input} placeholder="contoh: 3500000" placeholderTextColor="#3A4A60"
+                  {/* Preset budget */}
+                  <View style={{ gap: 10 }}>
+                    <Text style={styles.inputLabel}>Harga Penawaran *</Text>
+                    <View style={styles.chipRow}>
+                      {['250000','300000','350000','400000','450000','500000'].map(p => (
+                        <TouchableOpacity key={p} style={[styles.chip, bidPrice === p && styles.chipActive]}
+                          onPress={() => setBidPrice(p)}>
+                          <Text style={[styles.chipText, bidPrice === p && styles.chipTextActive]}>
+                            {parseInt(p)/1000}rb
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <TextInput style={styles.input} placeholder="Atau ketik nominal lain..." placeholderTextColor="#3A4A60"
                       value={bidPrice} onChangeText={setBidPrice} keyboardType="number-pad" />
                   </View>
 
+                  {/* Catatan */}
                   <View>
                     <Text style={styles.inputLabel}>Catatan (opsional)</Text>
                     <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-                      placeholder="Jelaskan apa saja yang termasuk..." placeholderTextColor="#3A4A60"
+                      placeholder="Jelaskan apa saja yang termasuk dalam penawaran..."
+                      placeholderTextColor="#3A4A60"
                       value={bidNote} onChangeText={setBidNote} multiline />
                   </View>
 
@@ -259,4 +273,9 @@ const styles = StyleSheet.create({
   doneWrap: { alignItems: 'center', padding: 40, gap: 14 },
   doneTitle: { fontSize: 22, fontWeight: '800', color: C.text },
   doneSub: { fontSize: 14, color: C.muted, textAlign: 'center', lineHeight: 20 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
+  chipActive: { borderColor: '#0D9488', backgroundColor: '#0D948820' },
+  chipText: { fontSize: 13, fontWeight: '600', color: C.muted },
+  chipTextActive: { color: '#0D9488' },
 })
