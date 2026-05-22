@@ -87,20 +87,26 @@ export default function WalletScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Riwayat Transaksi</Text>
           {ledger.length === 0 && <Text style={styles.empty}>Belum ada transaksi</Text>}
-          {ledger.map((tx: any) => (
-            <View key={tx.id} style={styles.txRow}>
-              <View style={[styles.txIcon, { backgroundColor: tx.amount > 0 ? '#10B98120' : '#EF444420' }]}>
-                <Text style={{ fontSize: 16 }}>{tx.amount > 0 ? '⬆️' : '⬇️'}</Text>
+          {ledger.map((tx: any, i: number) => {
+            const amt = tx.amount ?? 0
+            const dateStr = tx.created_at
+              ? (() => { try { return new Date(tx.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return '—' } })()
+              : '—'
+            return (
+              <View key={tx.id ?? i} style={styles.txRow}>
+                <View style={[styles.txIcon, { backgroundColor: amt > 0 ? '#10B98120' : '#EF444420' }]}>
+                  <Text style={{ fontSize: 16 }}>{amt > 0 ? '⬆️' : '⬇️'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.txLabel}>{TX_LABEL[tx.type] || tx.type || '—'}</Text>
+                  <Text style={styles.txDate}>{dateStr}</Text>
+                </View>
+                <Text style={[styles.txAmount, { color: amt > 0 ? '#10B981' : '#EF4444' }]}>
+                  {amt > 0 ? '+' : ''}{formatRpFull(amt)}
+                </Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.txLabel}>{TX_LABEL[tx.type] || tx.type}</Text>
-                <Text style={styles.txDate}>{new Date(tx.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-              </View>
-              <Text style={[styles.txAmount, { color: tx.amount > 0 ? '#10B981' : '#EF4444' }]}>
-                {tx.amount > 0 ? '+' : ''}{formatRpFull(tx.amount)}
-              </Text>
-            </View>
-          ))}
+            )
+          })}
         </View>
 
         <View style={{ height: 32 }} />
